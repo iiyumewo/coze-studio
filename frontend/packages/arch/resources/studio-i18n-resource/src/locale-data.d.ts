@@ -573,6 +573,7 @@ export interface I18nOptionsMap {
   'language_understanding_leaderboard_top_n': { n: ReactNode /* string */ };
   'language_understanding_leaderboard_top_n_explain': { n: ReactNode /* string */ };
   'last_modified_time': { time: ReactNode /* string */ };
+  'library_mcp_create_success': { tool_count: ReactNode /* string */ };
   'limits_dataset_files': { number_of_files: ReactNode /* string */ };
   'lite_version_tips': { doclink: ReactNode /* string */ };
   'location_not_parsed': { location: ReactNode /* string */ };
@@ -9797,11 +9798,30 @@ export type I18nKeysNoOptionsType =
   | 'library_filter_tags_text_card'
   | 'library_filter_tags_unpublished'
   | 'library_import'
+  | 'library_mcp_auth_header'
+  | 'library_mcp_auth_none'
+  | 'library_mcp_auth_type'
+  | 'library_mcp_backend_unavailable'
+  | 'library_mcp_connection_failed'
+  | 'library_mcp_create_title'
+  | 'library_mcp_header_name'
+  | 'library_mcp_header_name_required'
+  | 'library_mcp_header_value'
+  | 'library_mcp_header_value_required'
+  | 'library_mcp_invalid_url'
+  | 'library_mcp_server_name'
+  | 'library_mcp_server_name_placeholder'
+  | 'library_mcp_server_url'
+  | 'library_mcp_server_url_placeholder'
+  | 'library_mcp_server_url_required'
+  | 'library_mcp_shared_credential'
+  | 'library_mcp_test_and_add'
   | 'library_name'
   | 'library_resource'
   | 'library_resource_detail_back'
   | 'library_resource_type_imageflow'
   | 'library_resource_type_knowledge'
+  | 'library_resource_type_mcp'
   | 'library_resource_type_plugin'
   | 'library_resource_type_prompt'
   | 'library_resource_type_ui'
