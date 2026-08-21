@@ -1,0 +1,25 @@
+-- Create "mcp_server" table
+CREATE TABLE `opencoze`.`mcp_server` (
+  `id` bigint unsigned NOT NULL DEFAULT 0 COMMENT "MCP Server ID",
+  `space_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT "Space ID",
+  `creator_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT "Creator User ID",
+  `name` varchar(100) NOT NULL DEFAULT "" COMMENT "Display Name",
+  `description` varchar(2000) NOT NULL DEFAULT "" COMMENT "Server Description",
+  `server_url` varchar(2048) NOT NULL COMMENT "Streamable HTTP Endpoint",
+  `transport` varchar(32) NOT NULL DEFAULT "streamable_http" COMMENT "MCP Transport",
+  `auth_type` varchar(32) NOT NULL DEFAULT "none" COMMENT "Authentication Type",
+  `encrypted_auth` text NULL COMMENT "Encrypted Authentication Payload",
+  `tools` json NULL COMMENT "Discovered MCP Tool Definitions",
+  `protocol_version` varchar(32) NOT NULL DEFAULT "" COMMENT "Negotiated MCP Protocol Version",
+  `server_version` varchar(128) NOT NULL DEFAULT "" COMMENT "MCP Server Implementation Version",
+  `status` tinyint unsigned NOT NULL DEFAULT 1 COMMENT "Status: 1 Enabled, 2 Disabled",
+  `validation_status` varchar(32) NOT NULL DEFAULT "success" COMMENT "Latest Connection Validation Status",
+  `last_error` varchar(2000) NOT NULL DEFAULT "" COMMENT "Latest Connection Error",
+  `last_checked_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT "Latest Connection Check Time in Milliseconds",
+  `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT "Create Time in Milliseconds",
+  `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT "Update Time in Milliseconds",
+  `deleted_at` datetime(3) NULL COMMENT "Delete Time",
+  PRIMARY KEY (`id`),
+  INDEX `idx_mcp_server_space_updated_at` (`space_id`, `updated_at`),
+  INDEX `idx_mcp_server_creator_id` (`creator_id`)
+) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT "Workspace MCP server configuration";

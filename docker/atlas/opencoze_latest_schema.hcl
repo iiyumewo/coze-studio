@@ -2122,6 +2122,136 @@ table "model_instance" {
     columns = [column.id]
   }
 }
+table "mcp_server" {
+  schema  = schema.opencoze
+  comment = "Workspace MCP server configuration"
+  column "id" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "MCP Server ID"
+  }
+  column "space_id" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Space ID"
+  }
+  column "creator_id" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Creator User ID"
+  }
+  column "name" {
+    null    = false
+    type    = varchar(100)
+    default = ""
+    comment = "Display Name"
+  }
+  column "description" {
+    null    = false
+    type    = varchar(2000)
+    default = ""
+    comment = "Server Description"
+  }
+  column "server_url" {
+    null    = false
+    type    = varchar(2048)
+    comment = "Streamable HTTP Endpoint"
+  }
+  column "transport" {
+    null    = false
+    type    = varchar(32)
+    default = "streamable_http"
+    comment = "MCP Transport"
+  }
+  column "auth_type" {
+    null    = false
+    type    = varchar(32)
+    default = "none"
+    comment = "Authentication Type"
+  }
+  column "encrypted_auth" {
+    null    = true
+    type    = text
+    comment = "Encrypted Authentication Payload"
+  }
+  column "tools" {
+    null    = true
+    type    = json
+    comment = "Discovered MCP Tool Definitions"
+  }
+  column "protocol_version" {
+    null    = false
+    type    = varchar(32)
+    default = ""
+    comment = "Negotiated MCP Protocol Version"
+  }
+  column "server_version" {
+    null    = false
+    type    = varchar(128)
+    default = ""
+    comment = "MCP Server Implementation Version"
+  }
+  column "status" {
+    null     = false
+    type     = tinyint
+    default  = 1
+    unsigned = true
+    comment  = "Status: 1 Enabled, 2 Disabled"
+  }
+  column "validation_status" {
+    null    = false
+    type    = varchar(32)
+    default = "success"
+    comment = "Latest Connection Validation Status"
+  }
+  column "last_error" {
+    null    = false
+    type    = varchar(2000)
+    default = ""
+    comment = "Latest Connection Error"
+  }
+  column "last_checked_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Latest Connection Check Time in Milliseconds"
+  }
+  column "created_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Create Time in Milliseconds"
+  }
+  column "updated_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Update Time in Milliseconds"
+  }
+  column "deleted_at" {
+    null    = true
+    type    = datetime(3)
+    comment = "Delete Time"
+  }
+  primary_key {
+    columns = [column.id]
+  }
+  index "idx_mcp_server_space_updated_at" {
+    columns = [column.space_id, column.updated_at]
+  }
+  index "idx_mcp_server_creator_id" {
+    columns = [column.creator_id]
+  }
+}
 table "model_meta" {
   schema  = schema.opencoze
   comment = "Model metadata"
