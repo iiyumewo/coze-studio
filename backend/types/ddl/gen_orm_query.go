@@ -38,6 +38,7 @@ import (
 	database "github.com/coze-dev/coze-studio/backend/crossdomain/database/model"
 	plugin "github.com/coze-dev/coze-studio/backend/crossdomain/plugin/model"
 	appEntity "github.com/coze-dev/coze-studio/backend/domain/app/entity"
+	mcpEntity "github.com/coze-dev/coze-studio/backend/domain/mcp/entity"
 	variableEntity "github.com/coze-dev/coze-studio/backend/domain/memory/variables/entity"
 )
 
@@ -129,6 +130,11 @@ var path2Table2Columns2Model = map[string]map[string]map[string]any{
 	},
 	"domain/prompt/internal/dal/query": {
 		"prompt_resource": {},
+	},
+	"domain/mcp/internal/dal/query": {
+		"mcp_server": {
+			"tools": []*mcpEntity.Tool{},
+		},
 	},
 	// "domain/knowledge/internal/query": {
 	//	"knowledge":                {},
@@ -226,6 +232,7 @@ var path2Table2Columns2Model = map[string]map[string]map[string]any{
 
 var fieldNullablePath = map[string]bool{
 	"domain/agent/singleagent/internal/dal/query": true,
+	"domain/mcp/internal/dal/query":               true,
 }
 
 func main() {
