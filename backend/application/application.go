@@ -27,6 +27,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/application/connector"
 	"github.com/coze-dev/coze-studio/backend/application/conversation"
 	"github.com/coze-dev/coze-studio/backend/application/knowledge"
+	"github.com/coze-dev/coze-studio/backend/application/mcp"
 	"github.com/coze-dev/coze-studio/backend/application/memory"
 	"github.com/coze-dev/coze-studio/backend/application/modelmgr"
 	"github.com/coze-dev/coze-studio/backend/application/openauth"
@@ -183,6 +184,7 @@ func initEventBus(infra *appinfra.AppDependencies) *eventbusImpl {
 func initBasicServices(ctx context.Context, infra *appinfra.AppDependencies, e *eventbusImpl) (*basicServices, error) {
 	uploadSVC := upload.InitService(&upload.UploadComponents{Cache: infra.CacheCli, Oss: infra.OSS, DB: infra.DB, Idgen: infra.IDGenSVC})
 	openAuthSVC := openauth.InitService(infra.DB, infra.IDGenSVC)
+	mcp.InitService(infra.DB, infra.IDGenSVC)
 	promptSVC := prompt.InitService(infra.DB, infra.IDGenSVC, e.resourceEventBus)
 	modelMgrSVC := modelmgr.InitService(infra.OSS)
 	connectorSVC := connector.InitService(infra.OSS)

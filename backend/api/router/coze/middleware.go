@@ -1759,3 +1759,23 @@ func _pluginoauthauthorizationcodeMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
+
+func _mcp_manageMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _mcp_serversMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _testandcreatemcpserverMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _v10Mw() []app.HandlerFunc {
+	// your code...
+	return nil
+}

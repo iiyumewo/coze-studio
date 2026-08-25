@@ -199,6 +199,16 @@ func Register(r *server.Hertz) {
 			}
 		}
 		{
+			_mcp_manage := _api.Group("/mcp_manage", _mcp_manageMw()...)
+			{
+				_v1 := _mcp_manage.Group("/v1", _v1Mw()...)
+				{
+					_mcp_servers := _v1.Group("/mcp_servers", _mcp_serversMw()...)
+					_mcp_servers.POST("/test_and_create", append(_testandcreatemcpserverMw(), coze.TestAndCreateMCPServer)...)
+				}
+			}
+		}
+		{
 			_memory := _api.Group("/memory", _memoryMw()...)
 			_memory.GET("/doc_table_info", append(_getdocumenttableinfoMw(), coze.GetDocumentTableInfo)...)
 			_memory.GET("/sys_variable_conf", append(_getsysvariableconfMw(), coze.GetSysVariableConf)...)
@@ -482,33 +492,33 @@ func Register(r *server.Hertz) {
 		}
 	}
 	{
-		_v1 := root.Group("/v1", _v1Mw()...)
-		_v1.GET("/conversations", append(_listconversationsapiMw(), coze.ListConversationsApi)...)
-		_conversations := _v1.Group("/conversations", _conversationsMw()...)
+		_v10 := root.Group("/v1", _v10Mw()...)
+		_v10.GET("/conversations", append(_listconversationsapiMw(), coze.ListConversationsApi)...)
+		_conversations := _v10.Group("/conversations", _conversationsMw()...)
 		_conversations.DELETE("/:conversation_id", append(_deleteconversationapiMw(), coze.DeleteConversationApi)...)
 		_conversations.PUT("/:conversation_id", append(_updateconversationapiMw(), coze.UpdateConversationApi)...)
-		_v1.GET("/datasets", append(_listdatasetopenapiMw(), coze.ListDatasetOpenAPI)...)
-		_datasets := _v1.Group("/datasets", _datasetsMw()...)
+		_v10.GET("/datasets", append(_listdatasetopenapiMw(), coze.ListDatasetOpenAPI)...)
+		_datasets := _v10.Group("/datasets", _datasetsMw()...)
 		_datasets.DELETE("/:dataset_id", append(_deletedatasetopenapiMw(), coze.DeleteDatasetOpenAPI)...)
 		_dataset_id := _datasets.Group("/:dataset_id", _dataset_idMw()...)
 		_dataset_id.GET("/images", append(_listphotodocumentopenapiMw(), coze.ListPhotoDocumentOpenAPI)...)
 		_dataset_id.POST("/process", append(_getdocumentprogressopenapiMw(), coze.GetDocumentProgressOpenAPI)...)
 		_datasets.PUT("/:dataset_id", append(_updatedatasetopenapiMw(), coze.UpdateDatasetOpenAPI)...)
-		_v1.POST("/datasets", append(_createdatasetopenapiMw(), coze.CreateDatasetOpenAPI)...)
+		_v10.POST("/datasets", append(_createdatasetopenapiMw(), coze.CreateDatasetOpenAPI)...)
 		{
-			_apps := _v1.Group("/apps", _appsMw()...)
+			_apps := _v10.Group("/apps", _appsMw()...)
 			_apps.GET("/:app_id", append(_getonlineappdataMw(), coze.GetOnlineAppData)...)
 		}
 		{
-			_bot0 := _v1.Group("/bot", _bot0Mw()...)
+			_bot0 := _v10.Group("/bot", _bot0Mw()...)
 			_bot0.GET("/get_online_info", append(_getbotonlineinfoMw(), coze.GetBotOnlineInfo)...)
 		}
 		{
-			_bots := _v1.Group("/bots", _botsMw()...)
+			_bots := _v10.Group("/bots", _botsMw()...)
 			_bots.GET("/:bot_id", append(_opengetbotinfoMw(), coze.OpenGetBotInfo)...)
 		}
 		{
-			_conversation0 := _v1.Group("/conversation", _conversation0Mw()...)
+			_conversation0 := _v10.Group("/conversation", _conversation0Mw()...)
 			_conversation0.POST("/create", append(_createconversationMw(), coze.CreateConversation)...)
 			_conversation0.GET("/retrieve", append(_retrieveconversationapiMw(), coze.RetrieveConversationApi)...)
 			{
@@ -517,18 +527,18 @@ func Register(r *server.Hertz) {
 			}
 		}
 		{
-			_conversations0 := _v1.Group("/conversations", _conversations0Mw()...)
+			_conversations0 := _v10.Group("/conversations", _conversations0Mw()...)
 			{
 				_conversation_id := _conversations0.Group("/:conversation_id", _conversation_idMw()...)
 				_conversation_id.POST("/clear", append(_clearconversationapiMw(), coze.ClearConversationApi)...)
 			}
 		}
 		{
-			_files := _v1.Group("/files", _filesMw()...)
+			_files := _v10.Group("/files", _filesMw()...)
 			_files.POST("/upload", append(_uploadfileopenMw(), coze.UploadFileOpen)...)
 		}
 		{
-			_workflow := _v1.Group("/workflow", _workflowMw()...)
+			_workflow := _v10.Group("/workflow", _workflowMw()...)
 			_workflow.GET("/get_run_history", append(_openapigetworkflowrunhistoryMw(), coze.OpenAPIGetWorkflowRunHistory)...)
 			_workflow.POST("/run", append(_openapirunflowMw(), coze.OpenAPIRunFlow)...)
 			_workflow.POST("/stream_resume", append(_openapistreamresumeflowMw(), coze.OpenAPIStreamResumeFlow)...)
@@ -539,7 +549,7 @@ func Register(r *server.Hertz) {
 			}
 		}
 		{
-			_workflows := _v1.Group("/workflows", _workflowsMw()...)
+			_workflows := _v10.Group("/workflows", _workflowsMw()...)
 			_workflows.POST("/chat", append(_openapichatflowrunMw(), coze.OpenAPIChatFlowRun)...)
 			_workflows.GET("/:workflow_id", append(_openapigetworkflowinfoMw(), coze.OpenAPIGetWorkflowInfo)...)
 		}

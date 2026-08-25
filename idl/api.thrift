@@ -16,6 +16,7 @@ include "./workflow/workflow_svc.thrift"
 include "./app/bot_open_api.thrift"
 include "./upload/upload.thrift"
 include "./admin/config.thrift"
+include "./mcp/mcp_server.thrift"
 
 
 
@@ -39,3 +40,4 @@ service KnowledgeService extends knowledge_svc.DatasetService {}
 service BotOpenApiService extends bot_open_api.BotOpenApiService {}
 service UploadService extends upload.UploadService {}
 service ConfigService extends config.ConfigService {}
+service MCPManageService extends mcp_server.MCPManageService {}
