@@ -77,4 +77,5 @@ export const eventLibraryType = {
   [ResType.Database]: 'database',
   [ResType.Variable]: 'variable',
   [ResType.Voice]: 'voice',
+  [ResType.MCP]: undefined,
 } as const;

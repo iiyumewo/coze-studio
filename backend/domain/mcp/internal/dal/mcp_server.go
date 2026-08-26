@@ -75,6 +75,16 @@ func (dao *MCPServerDAO) Create(ctx context.Context, server *entity.MCPServer) (
 	return modelToServer(record), nil
 }
 
+func (dao *MCPServerDAO) GetByID(ctx context.Context, id int64) (*entity.MCPServer, error) {
+	mcpServer := dao.query.McpServer
+	record, err := mcpServer.WithContext(ctx).Where(mcpServer.ID.Eq(id)).First()
+	if err != nil {
+		return nil, err
+	}
+
+	return modelToServer(record), nil
+}
+
 func serverToModel(server *entity.MCPServer) *model.McpServer {
 	return &model.McpServer{
 		ID:              server.ID,

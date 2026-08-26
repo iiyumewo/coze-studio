@@ -10,6 +10,7 @@ enum ResType{
     Database = 7,
     Variable = 8,
     Voice = 9,
+    MCP = 10,
 }
 
 enum PublishStatus {

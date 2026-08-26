@@ -19,7 +19,9 @@ import { useState } from 'react';
 import { I18n } from '@coze-arch/i18n';
 import { IconCozLink } from '@coze-arch/coze-design/icons';
 import { Menu } from '@coze-arch/coze-design';
+import { ResType } from '@coze-arch/bot-api/plugin_develop';
 
+import { McpLibraryItem } from '../../mcp/mcp-library-item';
 import { CreateMcpServerModal } from '../../mcp/create-mcp-server-modal';
 import { type UseEntityConfigHook } from './types';
 
@@ -38,6 +40,10 @@ export const useMcpConfig: UseEntityConfigHook = ({ spaceId, reloadList }) => {
       />
     ) : null,
     config: {
+      typeFilter: {
+        label: I18n.t('library_resource_type_mcp'),
+        value: ResType.MCP,
+      },
       renderCreateMenu: () => (
         <Menu.Item
           data-testid="workspace.library.header.create.mcp"
@@ -47,8 +53,9 @@ export const useMcpConfig: UseEntityConfigHook = ({ spaceId, reloadList }) => {
           {I18n.t('library_resource_type_mcp')}
         </Menu.Item>
       ),
-      target: [],
+      target: [ResType.MCP],
       onItemClick: () => undefined,
+      renderItem: item => <McpLibraryItem resourceInfo={item} />,
       renderActions: () => null,
     },
   };

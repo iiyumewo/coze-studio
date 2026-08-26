@@ -19,6 +19,7 @@ package search
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/coze-dev/coze-studio/backend/api/model/data/database/table"
 	"github.com/coze-dev/coze-studio/backend/api/model/resource/common"
@@ -67,6 +68,8 @@ func NewResourcePacker(resID int64, t common.ResType, appContext *ServiceCompone
 		return &promptPacker{resourceBasePacker: base}, nil
 	case common.ResType_Database:
 		return &databasePacker{resourceBasePacker: base}, nil
+	case common.ResType_MCP:
+		return &mcpPacker{resourceBasePacker: base}, nil
 	}
 
 	return nil, fmt.Errorf("unsupported resource type: %s , resID: %d", t, resID)
@@ -78,10 +81,12 @@ type resourceBasePacker struct {
 }
 
 type dataInfo struct {
-	iconURI *string
-	iconURL string
-	desc    *string
-	status  *int32
+	iconURI       *string
+	iconURL       string
+	desc          *string
+	status        *int32
+	bizExtend     map[string]string
+	detailDisable *bool
 }
 
 func (b *resourceBasePacker) GetActions(ctx context.Context) []*common.ResourceAction {
@@ -370,4 +375,35 @@ func (d *databasePacker) GetProjectDefaultActions(ctx context.Context) []*common
 			Enable: true,
 		},
 	}
+}
+
+type mcpPacker struct {
+	resourceBasePacker
+}
+
+func (m *mcpPacker) GetDataInfo(ctx context.Context) (*dataInfo, error) {
+	server, err := m.appContext.MCPServerReader.GetByID(ctx, m.resID)
+	if err != nil {
+		return nil, err
+	}
+	if server == nil {
+		return nil, fmt.Errorf("MCP server not found, id: %d", m.resID)
+	}
+
+	return &dataInfo{
+		desc:          ptr.Of(server.Description),
+		status:        ptr.Of(int32(server.Status)),
+		detailDisable: ptr.Of(true),
+		bizExtend: map[string]string{
+			"server_url":       server.ServerURL,
+			"transport":        string(server.Transport),
+			"tool_count":       strconv.Itoa(len(server.Tools)),
+			"protocol_version": server.ProtocolVersion,
+			"server_version":   server.ServerVersion,
+		},
+	}, nil
+}
+
+func (m *mcpPacker) GetActions(context.Context) []*common.ResourceAction {
+	return []*common.ResourceAction{}
 }

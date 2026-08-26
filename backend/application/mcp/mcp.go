@@ -17,6 +17,7 @@
 package mcp
 
 import (
+	"github.com/coze-dev/coze-studio/backend/application/search"
 	"github.com/coze-dev/coze-studio/backend/domain/mcp/repository"
 	mcpinfra "github.com/coze-dev/coze-studio/backend/infra/mcp"
 )
@@ -24,6 +25,7 @@ import (
 type MCPApplicationService struct {
 	mcpClient     mcpinfra.Client
 	mcpServerRepo repository.MCPServerRepository
+	eventBus      search.ResourceEventBus
 }
 
 var MCPApplicationSVC *MCPApplicationService
@@ -31,9 +33,11 @@ var MCPApplicationSVC *MCPApplicationService
 func newApplicationService(
 	mcpClient mcpinfra.Client,
 	mcpServerRepo repository.MCPServerRepository,
+	eventBus search.ResourceEventBus,
 ) *MCPApplicationService {
 	return &MCPApplicationService{
 		mcpClient:     mcpClient,
 		mcpServerRepo: mcpServerRepo,
+		eventBus:      eventBus,
 	}
 }

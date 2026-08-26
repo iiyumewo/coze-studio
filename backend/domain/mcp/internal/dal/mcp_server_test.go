@@ -19,6 +19,7 @@ package dal
 import (
 	"context"
 	"encoding/json"
+	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -84,4 +85,65 @@ func TestMCPServerDAOCreate(t *testing.T) {
 	require.Len(t, created.Tools, 1)
 	require.NotZero(t, created.LastCheckedAt)
 	require.Equal(t, created.CreatedAt, created.UpdatedAt)
+}
+
+func TestMCPServerDAOGetByID(t *testing.T) {
+	const serverID int64 = 12345
+
+	newDAO := func(t *testing.T) (*MCPServerDAO, sqlmock.Sqlmock) {
+		t.Helper()
+
+		sqlDB, sqlMock, err := sqlmock.New()
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			require.NoError(t, sqlDB.Close())
+			require.NoError(t, sqlMock.ExpectationsWereMet())
+		})
+
+		db, err := gorm.Open(mysql.New(mysql.Config{
+			Conn:                      sqlDB,
+			SkipInitializeWithVersion: true,
+		}), &gorm.Config{SkipDefaultTransaction: true})
+		require.NoError(t, err)
+
+		controller := gomock.NewController(t)
+		idGen := idgenmock.NewMockIDGenerator(controller)
+		return NewMCPServerDAO(db, idGen), sqlMock
+	}
+
+	query := regexp.QuoteMeta("SELECT * FROM `mcp_server` WHERE `mcp_server`.`id` = ? AND `mcp_server`.`deleted_at` IS NULL ORDER BY `mcp_server`.`id` LIMIT ?")
+
+	t.Run("return MCP server", func(t *testing.T) {
+		dao, sqlMock := newDAO(t)
+		rows := sqlmock.NewRows([]string{
+			"id", "space_id", "creator_id", "name", "description", "server_url",
+			"transport", "auth_type", "encrypted_auth", "tools", "protocol_version",
+			"server_version", "status", "validation_status", "last_error",
+			"last_checked_at", "created_at", "updated_at", "deleted_at",
+		}).AddRow(
+			serverID, 100, 200, "MySQL MCP", "Database tools", "https://mcp.example.com/mcp",
+			"streamable_http", "none", nil, `[{"name":"query","input_schema":{"type":"object"}}]`,
+			"2025-03-26", "1.0.0", 1, "success", "", 1000, 900, 1000, nil,
+		)
+		sqlMock.ExpectQuery(query).WithArgs(serverID, 1).WillReturnRows(rows)
+		sqlMock.ExpectClose()
+
+		server, err := dao.GetByID(context.Background(), serverID)
+		require.NoError(t, err)
+		require.Equal(t, serverID, server.ID)
+		require.Equal(t, int64(100), server.SpaceID)
+		require.Equal(t, "MySQL MCP", server.Name)
+		require.Len(t, server.Tools, 1)
+		require.Equal(t, "query", server.Tools[0].Name)
+	})
+
+	t.Run("return record not found error", func(t *testing.T) {
+		dao, sqlMock := newDAO(t)
+		sqlMock.ExpectQuery(query).WithArgs(serverID, 1).WillReturnRows(sqlmock.NewRows([]string{"id"}))
+		sqlMock.ExpectClose()
+
+		server, err := dao.GetByID(context.Background(), serverID)
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		require.Nil(t, server)
+	})
 }

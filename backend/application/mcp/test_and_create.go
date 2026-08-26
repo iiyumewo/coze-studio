@@ -25,12 +25,15 @@ import (
 
 	basemodel "github.com/coze-dev/coze-studio/backend/api/model/base"
 	mcpmodel "github.com/coze-dev/coze-studio/backend/api/model/mcp"
+	rescommon "github.com/coze-dev/coze-studio/backend/api/model/resource/common"
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
 	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/user"
 	mcpentity "github.com/coze-dev/coze-studio/backend/domain/mcp/entity"
 	pluginencrypt "github.com/coze-dev/coze-studio/backend/domain/plugin/encrypt"
+	searchentity "github.com/coze-dev/coze-studio/backend/domain/search/entity"
 	mcpinfra "github.com/coze-dev/coze-studio/backend/infra/mcp"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
+	"github.com/coze-dev/coze-studio/backend/pkg/lang/ptr"
 	"github.com/coze-dev/coze-studio/backend/types/errno"
 )
 
@@ -190,6 +193,24 @@ func (s *MCPApplicationService) createMCPServer(
 	}
 	if createdServer == nil {
 		return nil, errorx.New(errno.ErrMCPCreateCode)
+	}
+
+	err = s.eventBus.PublishResources(ctx, &searchentity.ResourceDomainEvent{
+		OpType: searchentity.Created,
+		Resource: &searchentity.ResourceDocument{
+			ResType:       rescommon.ResType_MCP,
+			ResID:         createdServer.ID,
+			Name:          ptr.Of(createdServer.Name),
+			SpaceID:       ptr.Of(createdServer.SpaceID),
+			OwnerID:       ptr.Of(createdServer.CreatorID),
+			PublishStatus: ptr.Of(rescommon.PublishStatus_Published),
+			CreateTimeMS:  ptr.Of(createdServer.CreatedAt),
+			UpdateTimeMS:  ptr.Of(createdServer.UpdatedAt),
+		},
+	})
+	if err != nil {
+		return nil, errorx.WrapByCode(err, errno.ErrMCPCreateCode,
+			errorx.KV("msg", "failed to publish MCP resource event"))
 	}
 
 	return createdServer, nil

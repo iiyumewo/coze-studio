@@ -27,6 +27,7 @@ import (
 	app "github.com/coze-dev/coze-studio/backend/domain/app/service"
 	connector "github.com/coze-dev/coze-studio/backend/domain/connector/service"
 	knowledge "github.com/coze-dev/coze-studio/backend/domain/knowledge/service"
+	mcpentity "github.com/coze-dev/coze-studio/backend/domain/mcp/entity"
 	database "github.com/coze-dev/coze-studio/backend/domain/memory/database/service"
 	"github.com/coze-dev/coze-studio/backend/domain/plugin/service"
 	prompt "github.com/coze-dev/coze-studio/backend/domain/prompt/service"
@@ -57,6 +58,11 @@ type ServiceComponents struct {
 	ConnectorDomainSVC   connector.Connector
 	PromptDomainSVC      prompt.Prompt
 	DatabaseDomainSVC    database.Database
+	MCPServerReader      MCPServerReader
+}
+
+type MCPServerReader interface {
+	GetByID(ctx context.Context, id int64) (*mcpentity.MCPServer, error)
 }
 
 func InitService(ctx context.Context, s *ServiceComponents) (*SearchApplicationService, error) {

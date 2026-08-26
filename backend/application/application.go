@@ -72,6 +72,7 @@ import (
 	variablesImpl "github.com/coze-dev/coze-studio/backend/crossdomain/variables/impl"
 	crossworkflow "github.com/coze-dev/coze-studio/backend/crossdomain/workflow"
 	workflowImpl "github.com/coze-dev/coze-studio/backend/crossdomain/workflow/impl"
+	mcprepository "github.com/coze-dev/coze-studio/backend/domain/mcp/repository"
 	"github.com/coze-dev/coze-studio/backend/infra/checkpoint"
 	"github.com/coze-dev/coze-studio/backend/infra/document/progressbar"
 	progressBarImpl "github.com/coze-dev/coze-studio/backend/infra/document/progressbar/impl/progressbar"
@@ -184,7 +185,7 @@ func initEventBus(infra *appinfra.AppDependencies) *eventbusImpl {
 func initBasicServices(ctx context.Context, infra *appinfra.AppDependencies, e *eventbusImpl) (*basicServices, error) {
 	uploadSVC := upload.InitService(&upload.UploadComponents{Cache: infra.CacheCli, Oss: infra.OSS, DB: infra.DB, Idgen: infra.IDGenSVC})
 	openAuthSVC := openauth.InitService(infra.DB, infra.IDGenSVC)
-	mcp.InitService(infra.DB, infra.IDGenSVC)
+	mcp.InitService(infra.DB, infra.IDGenSVC, e.resourceEventBus)
 	promptSVC := prompt.InitService(infra.DB, infra.IDGenSVC, e.resourceEventBus)
 	modelMgrSVC := modelmgr.InitService(infra.OSS)
 	connectorSVC := connector.InitService(infra.OSS)
@@ -369,6 +370,7 @@ func (p *primaryServices) toSearchServiceComponents(singleAgentSVC *singleagent.
 		ConnectorDomainSVC:   p.basicServices.connectorSVC.DomainSVC,
 		PromptDomainSVC:      p.basicServices.promptSVC.DomainSVC,
 		DatabaseDomainSVC:    p.memorySVC.DatabaseDomainSVC,
+		MCPServerReader:      mcprepository.NewMCPServerRepo(infra.DB, infra.IDGenSVC),
 	}
 }
 

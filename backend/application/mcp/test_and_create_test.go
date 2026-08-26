@@ -25,9 +25,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	mcpmodel "github.com/coze-dev/coze-studio/backend/api/model/mcp"
+	rescommon "github.com/coze-dev/coze-studio/backend/api/model/resource/common"
 	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/user"
 	mcpentity "github.com/coze-dev/coze-studio/backend/domain/mcp/entity"
 	pluginencrypt "github.com/coze-dev/coze-studio/backend/domain/plugin/encrypt"
+	searchentity "github.com/coze-dev/coze-studio/backend/domain/search/entity"
 	userentity "github.com/coze-dev/coze-studio/backend/domain/user/entity"
 	mcpinfra "github.com/coze-dev/coze-studio/backend/infra/mcp"
 	"github.com/coze-dev/coze-studio/backend/pkg/ctxcache"
@@ -71,6 +73,28 @@ func (f *fakeMCPServerRepository) Create(
 	return f.createFn(ctx, server)
 }
 
+func (f *fakeMCPServerRepository) GetByID(context.Context, int64) (*mcpentity.MCPServer, error) {
+	return nil, nil
+}
+
+type fakeResourceEventBus struct {
+	publishFn func(ctx context.Context, event *searchentity.ResourceDomainEvent) error
+	event     *searchentity.ResourceDomainEvent
+	calls     int
+}
+
+func (f *fakeResourceEventBus) PublishResources(
+	ctx context.Context,
+	event *searchentity.ResourceDomainEvent,
+) error {
+	f.calls++
+	f.event = event
+	if f.publishFn == nil {
+		return nil
+	}
+	return f.publishFn(ctx, event)
+}
+
 type fakeUserService struct {
 	spaces []*userentity.Space
 	err    error
@@ -100,7 +124,8 @@ func TestMCPApplicationServiceTestAndCreateMCPServer(t *testing.T) {
 				return &createdServer, nil
 			},
 		}
-		service := newApplicationService(client, repository)
+		eventBus := &fakeResourceEventBus{}
+		service := newApplicationService(client, repository, eventBus)
 
 		response, err := service.TestAndCreateMCPServer(ctx, headerAuthenticationRequest())
 
@@ -128,6 +153,15 @@ func TestMCPApplicationServiceTestAndCreateMCPServer(t *testing.T) {
 		require.Len(t, repository.server.Tools, 1)
 		require.Equal(t, "lookup", repository.server.Tools[0].Name)
 
+		require.Equal(t, 1, eventBus.calls)
+		require.Equal(t, searchentity.Created, eventBus.event.OpType)
+		require.Equal(t, rescommon.ResType_MCP, eventBus.event.Resource.ResType)
+		require.Equal(t, testServerID, eventBus.event.Resource.ResID)
+		require.Equal(t, "Test MCP Server", *eventBus.event.Resource.Name)
+		require.Equal(t, testSpaceID, *eventBus.event.Resource.SpaceID)
+		require.Equal(t, testUserID, *eventBus.event.Resource.OwnerID)
+		require.Equal(t, rescommon.PublishStatus_Published, *eventBus.event.Resource.PublishStatus)
+
 		decryptedAuth, err := pluginencrypt.DecryptByAES(*repository.server.EncryptedAuth, testAESSecret)
 		require.NoError(t, err)
 		var authentication headerAuthenticationPayload
@@ -150,7 +184,8 @@ func TestMCPApplicationServiceTestAndCreateMCPServer(t *testing.T) {
 				return nil, nil
 			},
 		}
-		service := newApplicationService(client, repository)
+		eventBus := &fakeResourceEventBus{}
+		service := newApplicationService(client, repository, eventBus)
 
 		response, err := service.TestAndCreateMCPServer(ctx, headerAuthenticationRequest())
 
@@ -158,6 +193,7 @@ func TestMCPApplicationServiceTestAndCreateMCPServer(t *testing.T) {
 		requireStatusErrorCode(t, err, errno.ErrMCPPermissionCode)
 		require.Equal(t, 0, client.calls)
 		require.Equal(t, 0, repository.calls)
+		require.Equal(t, 0, eventBus.calls)
 	})
 
 	t.Run("do not save when MCP validation fails", func(t *testing.T) {
@@ -173,7 +209,8 @@ func TestMCPApplicationServiceTestAndCreateMCPServer(t *testing.T) {
 				return nil, nil
 			},
 		}
-		service := newApplicationService(client, repository)
+		eventBus := &fakeResourceEventBus{}
+		service := newApplicationService(client, repository, eventBus)
 
 		response, err := service.TestAndCreateMCPServer(ctx, headerAuthenticationRequest())
 
@@ -181,6 +218,7 @@ func TestMCPApplicationServiceTestAndCreateMCPServer(t *testing.T) {
 		requireStatusErrorCode(t, err, errno.ErrMCPValidateCode)
 		require.Equal(t, 1, client.calls)
 		require.Equal(t, 0, repository.calls)
+		require.Equal(t, 0, eventBus.calls)
 	})
 
 	t.Run("map repository failure to MCP create error", func(t *testing.T) {
@@ -195,7 +233,8 @@ func TestMCPApplicationServiceTestAndCreateMCPServer(t *testing.T) {
 				return nil, errors.New("database unavailable")
 			},
 		}
-		service := newApplicationService(client, repository)
+		eventBus := &fakeResourceEventBus{}
+		service := newApplicationService(client, repository, eventBus)
 
 		response, err := service.TestAndCreateMCPServer(ctx, headerAuthenticationRequest())
 
@@ -203,6 +242,37 @@ func TestMCPApplicationServiceTestAndCreateMCPServer(t *testing.T) {
 		requireStatusErrorCode(t, err, errno.ErrMCPCreateCode)
 		require.Equal(t, 1, client.calls)
 		require.Equal(t, 1, repository.calls)
+		require.Equal(t, 0, eventBus.calls)
+	})
+
+	t.Run("map resource event failure to MCP create error", func(t *testing.T) {
+		ctx := authorizedContext(t, testSpaceID)
+		client := &fakeMCPClient{
+			testFn: func(context.Context, *mcpinfra.TestRequest) (*mcpinfra.TestResult, error) {
+				return successfulTestResult(), nil
+			},
+		}
+		repository := &fakeMCPServerRepository{
+			createFn: func(_ context.Context, server *mcpentity.MCPServer) (*mcpentity.MCPServer, error) {
+				createdServer := *server
+				createdServer.ID = testServerID
+				return &createdServer, nil
+			},
+		}
+		eventBus := &fakeResourceEventBus{
+			publishFn: func(context.Context, *searchentity.ResourceDomainEvent) error {
+				return errors.New("event bus unavailable")
+			},
+		}
+		service := newApplicationService(client, repository, eventBus)
+
+		response, err := service.TestAndCreateMCPServer(ctx, headerAuthenticationRequest())
+
+		require.Nil(t, response)
+		requireStatusErrorCode(t, err, errno.ErrMCPCreateCode)
+		require.Equal(t, 1, client.calls)
+		require.Equal(t, 1, repository.calls)
+		require.Equal(t, 1, eventBus.calls)
 	})
 }
 
