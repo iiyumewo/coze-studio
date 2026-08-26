@@ -84,7 +84,12 @@ export { evaluationApi } from './fornax-evaluation-api';
 export { cozeSpaceApi } from './coze-space-api';
 export {
   mcpApi,
+  type DeleteMcpServerResponse,
+  type GetMcpServerResponse,
   type McpServerAuthentication,
+  type McpServerDetail,
+  type McpServerDetailAuthentication,
+  type McpServerTool,
   type TestAndCreateMcpServerRequest,
   type TestAndCreateMcpServerResponse,
 } from './mcp-api';

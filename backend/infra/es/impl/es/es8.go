@@ -29,6 +29,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/typedapi/indices/exists"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/operator"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/refresh"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/sortorder"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/textquerytype"
 
@@ -73,7 +74,7 @@ func newES8() (Client, error) {
 }
 
 func (c *es8Client) Create(ctx context.Context, index, id string, document any) error {
-	_, err := c.esClient.Index(index).Id(id).Document(document).Do(ctx)
+	_, err := c.esClient.Index(index).Id(id).Document(document).Refresh(refresh.True).Do(ctx)
 	return err
 }
 
@@ -83,7 +84,7 @@ func (c *es8Client) Update(ctx context.Context, index, id string, document any) 
 }
 
 func (c *es8Client) Delete(ctx context.Context, index, id string) error {
-	_, err := c.esClient.Delete(index, id).Do(ctx)
+	_, err := c.esClient.Delete(index, id).Refresh(refresh.True).Do(ctx)
 	return err
 }
 

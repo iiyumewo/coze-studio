@@ -204,6 +204,8 @@ func Register(r *server.Hertz) {
 				_v1 := _mcp_manage.Group("/v1", _v1Mw()...)
 				{
 					_mcp_servers := _v1.Group("/mcp_servers", _mcp_serversMw()...)
+					_mcp_servers.DELETE("/:mcp_server_id", append(_deletemcpserverMw(), coze.DeleteMCPServer)...)
+					_mcp_servers.GET("/:mcp_server_id", append(_getmcpserverMw(), coze.GetMCPServer)...)
 					_mcp_servers.POST("/test_and_create", append(_testandcreatemcpserverMw(), coze.TestAndCreateMCPServer)...)
 				}
 			}

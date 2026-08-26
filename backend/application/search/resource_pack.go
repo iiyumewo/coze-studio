@@ -393,7 +393,7 @@ func (m *mcpPacker) GetDataInfo(ctx context.Context) (*dataInfo, error) {
 	return &dataInfo{
 		desc:          ptr.Of(server.Description),
 		status:        ptr.Of(int32(server.Status)),
-		detailDisable: ptr.Of(true),
+		detailDisable: ptr.Of(false),
 		bizExtend: map[string]string{
 			"server_url":       server.ServerURL,
 			"transport":        string(server.Transport),
@@ -405,5 +405,10 @@ func (m *mcpPacker) GetDataInfo(ctx context.Context) (*dataInfo, error) {
 }
 
 func (m *mcpPacker) GetActions(context.Context) []*common.ResourceAction {
-	return []*common.ResourceAction{}
+	return []*common.ResourceAction{
+		{
+			Key:    common.ActionKey_Delete,
+			Enable: true,
+		},
+	}
 }

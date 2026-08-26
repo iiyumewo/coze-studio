@@ -1779,3 +1779,13 @@ func _v10Mw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
+
+func _getmcpserverMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _deletemcpserverMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}

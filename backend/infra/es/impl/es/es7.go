@@ -97,6 +97,7 @@ func (c *es7Client) Delete(ctx context.Context, index, id string) error {
 	req := esapi.DeleteRequest{
 		Index:      index,
 		DocumentID: id,
+		Refresh:    "true",
 	}
 
 	logs.CtxDebugf(ctx, "[Delete] req : %s", conv.DebugJsonToStr(req))

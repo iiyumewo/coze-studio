@@ -85,6 +85,21 @@ func (dao *MCPServerDAO) GetByID(ctx context.Context, id int64) (*entity.MCPServ
 	return modelToServer(record), nil
 }
 
+func (dao *MCPServerDAO) Delete(ctx context.Context, id, spaceID int64) error {
+	mcpServer := dao.query.McpServer
+	result, err := mcpServer.WithContext(ctx).
+		Where(mcpServer.ID.Eq(id), mcpServer.SpaceID.Eq(spaceID)).
+		Delete()
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
+}
+
 func serverToModel(server *entity.MCPServer) *model.McpServer {
 	return &model.McpServer{
 		ID:              server.ID,

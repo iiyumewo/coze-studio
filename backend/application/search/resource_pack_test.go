@@ -65,11 +65,14 @@ func TestMCPPacker(t *testing.T) {
 		require.Equal(t, serverID, reader.id)
 		require.Equal(t, "Browser automation tools", *data.desc)
 		require.Equal(t, int32(mcpentity.ServerStatusEnabled), *data.status)
-		require.True(t, *data.detailDisable)
+		require.False(t, *data.detailDisable)
 		require.Equal(t, "2", data.bizExtend["tool_count"])
 		require.Equal(t, "streamable_http", data.bizExtend["transport"])
 		require.Equal(t, "http://127.0.0.1:8931/mcp", data.bizExtend["server_url"])
-		require.Empty(t, packer.GetActions(context.Background()))
+		actions := packer.GetActions(context.Background())
+		require.Len(t, actions, 1)
+		require.Equal(t, common.ActionKey_Delete, actions[0].Key)
+		require.True(t, actions[0].Enable)
 	})
 
 	t.Run("return repository error", func(t *testing.T) {

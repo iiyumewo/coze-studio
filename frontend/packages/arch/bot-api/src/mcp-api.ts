@@ -42,6 +42,46 @@ export interface TestAndCreateMcpServerResponse {
   };
 }
 
+export interface McpServerDetailAuthentication {
+  type: 'none' | 'header';
+  header_name?: string;
+}
+
+export interface McpServerTool {
+  name: string;
+  title?: string;
+  description?: string;
+}
+
+export interface McpServerDetail {
+  id: string;
+  name: string;
+  description?: string;
+  server_url: string;
+  transport: 'streamable_http';
+  authentication: McpServerDetailAuthentication;
+  tools: McpServerTool[];
+  protocol_version?: string;
+  server_version?: string;
+  status: number;
+  validation_status: string;
+  last_error?: string;
+  last_checked_at: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface GetMcpServerResponse {
+  code: number;
+  msg?: string;
+  data?: McpServerDetail;
+}
+
+export interface DeleteMcpServerResponse {
+  code: number;
+  msg?: string;
+}
+
 export const mcpApi = {
   testAndCreate: (
     request: TestAndCreateMcpServerRequest,
@@ -55,5 +95,27 @@ export const mcpApi = {
       url: '/api/mcp_manage/v1/mcp_servers/test_and_create',
       method: 'POST',
       data: request,
+    }),
+  getDetail: (
+    mcpServerId: string,
+    spaceId: string,
+    config: BotAPIRequestConfig = {},
+  ) =>
+    axiosInstance.request<GetMcpServerResponse, GetMcpServerResponse>({
+      ...config,
+      url: `/api/mcp_manage/v1/mcp_servers/${encodeURIComponent(mcpServerId)}`,
+      method: 'GET',
+      params: { space_id: spaceId },
+    }),
+  deleteServer: (
+    mcpServerId: string,
+    spaceId: string,
+    config: BotAPIRequestConfig = {},
+  ) =>
+    axiosInstance.request<DeleteMcpServerResponse, DeleteMcpServerResponse>({
+      ...config,
+      url: `/api/mcp_manage/v1/mcp_servers/${encodeURIComponent(mcpServerId)}`,
+      method: 'DELETE',
+      params: { space_id: spaceId },
     }),
 };

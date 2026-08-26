@@ -47,3 +47,43 @@ func TestAndCreateMCPServer(ctx context.Context, c *app.RequestContext) {
 
 	c.JSON(consts.StatusOK, resp)
 }
+
+// GetMCPServer .
+// @router /api/mcp_manage/v1/mcp_servers/:mcp_server_id [GET]
+func GetMCPServer(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req mcpmodel.GetMCPServerRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		invalidParamRequestResponse(c, err.Error())
+		return
+	}
+
+	resp, err := mcpapplication.MCPApplicationSVC.GetMCPServer(ctx, &req)
+	if err != nil {
+		internalServerErrorResponse(ctx, c, err)
+		return
+	}
+
+	c.JSON(consts.StatusOK, resp)
+}
+
+// DeleteMCPServer .
+// @router /api/mcp_manage/v1/mcp_servers/:mcp_server_id [DELETE]
+func DeleteMCPServer(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req mcpmodel.DeleteMCPServerRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		invalidParamRequestResponse(c, err.Error())
+		return
+	}
+
+	resp, err := mcpapplication.MCPApplicationSVC.DeleteMCPServer(ctx, &req)
+	if err != nil {
+		internalServerErrorResponse(ctx, c, err)
+		return
+	}
+
+	c.JSON(consts.StatusOK, resp)
+}

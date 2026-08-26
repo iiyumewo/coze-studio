@@ -24,6 +24,8 @@ const (
 	ErrMCPPermissionCode   = 113000001
 	ErrMCPValidateCode     = 113000002
 	ErrMCPCreateCode       = 113000003
+	ErrMCPGetCode          = 113000004
+	ErrMCPDeleteCode       = 113000005
 )
 
 func init() {
@@ -48,6 +50,18 @@ func init() {
 	code.Register(
 		ErrMCPCreateCode,
 		"create MCP server failed",
+		code.WithAffectStability(true),
+	)
+
+	code.Register(
+		ErrMCPGetCode,
+		"get MCP server failed",
+		code.WithAffectStability(true),
+	)
+
+	code.Register(
+		ErrMCPDeleteCode,
+		"delete MCP server failed",
 		code.WithAffectStability(true),
 	)
 }

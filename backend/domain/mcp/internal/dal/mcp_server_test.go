@@ -147,3 +147,53 @@ func TestMCPServerDAOGetByID(t *testing.T) {
 		require.Nil(t, server)
 	})
 }
+
+func TestMCPServerDAODelete(t *testing.T) {
+	const (
+		serverID int64 = 12345
+		spaceID  int64 = 100
+	)
+
+	newDAO := func(t *testing.T) (*MCPServerDAO, sqlmock.Sqlmock) {
+		t.Helper()
+
+		sqlDB, sqlMock, err := sqlmock.New()
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			require.NoError(t, sqlDB.Close())
+			require.NoError(t, sqlMock.ExpectationsWereMet())
+		})
+
+		db, err := gorm.Open(mysql.New(mysql.Config{
+			Conn:                      sqlDB,
+			SkipInitializeWithVersion: true,
+		}), &gorm.Config{SkipDefaultTransaction: true})
+		require.NoError(t, err)
+
+		controller := gomock.NewController(t)
+		idGen := idgenmock.NewMockIDGenerator(controller)
+		return NewMCPServerDAO(db, idGen), sqlMock
+	}
+
+	deleteQuery := regexp.QuoteMeta("UPDATE `mcp_server` SET `deleted_at`=? WHERE `mcp_server`.`id` = ? AND `mcp_server`.`space_id` = ? AND `mcp_server`.`deleted_at` IS NULL")
+
+	t.Run("soft delete workspace MCP server", func(t *testing.T) {
+		dao, sqlMock := newDAO(t)
+		sqlMock.ExpectExec(deleteQuery).
+			WithArgs(sqlmock.AnyArg(), serverID, spaceID).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+		sqlMock.ExpectClose()
+
+		require.NoError(t, dao.Delete(context.Background(), serverID, spaceID))
+	})
+
+	t.Run("return record not found when no row is deleted", func(t *testing.T) {
+		dao, sqlMock := newDAO(t)
+		sqlMock.ExpectExec(deleteQuery).
+			WithArgs(sqlmock.AnyArg(), serverID, spaceID).
+			WillReturnResult(sqlmock.NewResult(0, 0))
+		sqlMock.ExpectClose()
+
+		require.ErrorIs(t, dao.Delete(context.Background(), serverID, spaceID), gorm.ErrRecordNotFound)
+	})
+}

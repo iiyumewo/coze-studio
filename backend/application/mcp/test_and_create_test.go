@@ -77,6 +77,10 @@ func (f *fakeMCPServerRepository) GetByID(context.Context, int64) (*mcpentity.MC
 	return nil, nil
 }
 
+func (f *fakeMCPServerRepository) Delete(context.Context, int64, int64) error {
+	return errors.New("unexpected Delete call")
+}
+
 type fakeResourceEventBus struct {
 	publishFn func(ctx context.Context, event *searchentity.ResourceDomainEvent) error
 	event     *searchentity.ResourceDomainEvent
