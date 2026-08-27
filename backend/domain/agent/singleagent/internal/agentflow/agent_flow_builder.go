@@ -110,6 +110,13 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 	if err != nil {
 		return nil, err
 	}
+	mcpTools, err := newMCPTools(ctx, &mcpToolConfig{
+		spaceID:    conf.Agent.SpaceID,
+		serverRefs: conf.Agent.MCP,
+	})
+	if err != nil {
+		return nil, err
+	}
 	tr := newPreToolRetriever(&toolPreCallConf{})
 
 	wfTools, returnDirectlyTools, err := newWorkflowTools(ctx, &workflowConfig{
@@ -144,8 +151,11 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 	if len(wfTools) > 0 {
 		containWfTool = true
 	}
-	agentTools := make([]tool.BaseTool, 0, len(pluginTools)+len(wfTools)+len(dbTools)+len(avTools))
+	agentTools := make([]tool.BaseTool, 0, len(pluginTools)+len(mcpTools)+len(wfTools)+len(dbTools)+len(avTools))
 	agentTools = append(agentTools, slices.Transform(pluginTools, func(a tool.InvokableTool) tool.BaseTool {
+		return a
+	})...)
+	agentTools = append(agentTools, slices.Transform(mcpTools, func(a tool.InvokableTool) tool.BaseTool {
 		return a
 	})...)
 	agentTools = append(agentTools, slices.Transform(wfTools, func(a workflow.ToolFromWorkflow) tool.BaseTool { return a.(tool.BaseTool) })...)
@@ -156,6 +166,11 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 	agentTools = append(agentTools, slices.Transform(avTools, func(a tool.InvokableTool) tool.BaseTool {
 		return a
 	})...)
+	if len(mcpTools) > 0 {
+		if err = validateUniqueToolNames(ctx, agentTools); err != nil {
+			return nil, err
+		}
+	}
 
 	var isReActAgent bool
 	if len(agentTools) > 0 {
@@ -175,9 +190,10 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 			ToolsConfig: compose.ToolsNodeConfig{
 				Tools: agentTools,
 			},
-			ToolReturnDirectly: returnDirectlyTools,
-			ModelNodeName:      keyOfReActAgentChatModel,
-			ToolsNodeName:      keyOfReActAgentToolsNode,
+			ToolReturnDirectly:    returnDirectlyTools,
+			StreamToolCallChecker: fullStreamToolCallChecker,
+			ModelNodeName:         keyOfReActAgentChatModel,
+			ToolsNodeName:         keyOfReActAgentToolsNode,
 		})
 		if err != nil {
 			return nil, err

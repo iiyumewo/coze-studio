@@ -85,6 +85,27 @@ func (dao *MCPServerDAO) GetByID(ctx context.Context, id int64) (*entity.MCPServ
 	return modelToServer(record), nil
 }
 
+func (dao *MCPServerDAO) MGetByIDs(ctx context.Context, spaceID int64, ids []int64) ([]*entity.MCPServer, error) {
+	if len(ids) == 0 {
+		return []*entity.MCPServer{}, nil
+	}
+
+	mcpServer := dao.query.McpServer
+	records, err := mcpServer.WithContext(ctx).
+		Where(mcpServer.SpaceID.Eq(spaceID), mcpServer.ID.In(ids...)).
+		Find()
+	if err != nil {
+		return nil, err
+	}
+
+	servers := make([]*entity.MCPServer, 0, len(records))
+	for _, record := range records {
+		servers = append(servers, modelToServer(record))
+	}
+
+	return servers, nil
+}
+
 func (dao *MCPServerDAO) Delete(ctx context.Context, id, spaceID int64) error {
 	mcpServer := dao.query.McpServer
 	result, err := mcpServer.WithContext(ctx).

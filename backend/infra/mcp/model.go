@@ -30,11 +30,14 @@ const (
 )
 
 var (
-	ErrInvalidRequest     = errors.New("invalid MCP test request")
-	ErrConnectServer      = errors.New("connect to MCP server failed")
-	ErrDiscoverTools      = errors.New("discover MCP tools failed")
-	ErrNormalizeTool      = errors.New("normalize MCP tool failed")
-	ErrRedirectNotAllowed = errors.New("MCP server redirect is not allowed")
+	ErrInvalidRequest         = errors.New("invalid MCP test request")
+	ErrInvalidCallToolRequest = errors.New("invalid MCP tool call request")
+	ErrConnectServer          = errors.New("connect to MCP server failed")
+	ErrDiscoverTools          = errors.New("discover MCP tools failed")
+	ErrNormalizeTool          = errors.New("normalize MCP tool failed")
+	ErrCallTool               = errors.New("call MCP tool failed")
+	ErrNormalizeToolResult    = errors.New("normalize MCP tool result failed")
+	ErrRedirectNotAllowed     = errors.New("MCP server redirect is not allowed")
 )
 
 type Authentication struct {
@@ -46,6 +49,18 @@ type Authentication struct {
 type TestRequest struct {
 	ServerURL      string
 	Authentication Authentication
+}
+
+type CallToolRequest struct {
+	ServerURL      string
+	Authentication Authentication
+	ToolName       string
+	Arguments      json.RawMessage
+}
+
+type CallToolResult struct {
+	Output  string
+	IsError bool
 }
 
 type ToolAnnotations struct {
@@ -76,4 +91,8 @@ type TestResult struct {
 
 type Client interface {
 	Test(ctx context.Context, request *TestRequest) (*TestResult, error)
+}
+
+type ToolClient interface {
+	CallTool(ctx context.Context, request *CallToolRequest) (*CallToolResult, error)
 }

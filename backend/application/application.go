@@ -56,6 +56,8 @@ import (
 	dataCopyImpl "github.com/coze-dev/coze-studio/backend/crossdomain/datacopy/impl"
 	crossknowledge "github.com/coze-dev/coze-studio/backend/crossdomain/knowledge"
 	knowledgeImpl "github.com/coze-dev/coze-studio/backend/crossdomain/knowledge/impl"
+	crossmcp "github.com/coze-dev/coze-studio/backend/crossdomain/mcp"
+	mcpImpl "github.com/coze-dev/coze-studio/backend/crossdomain/mcp/impl"
 	crossmessage "github.com/coze-dev/coze-studio/backend/crossdomain/message"
 	messageImpl "github.com/coze-dev/coze-studio/backend/crossdomain/message/impl"
 	crosspermission "github.com/coze-dev/coze-studio/backend/crossdomain/permission"
@@ -98,6 +100,7 @@ type basicServices struct {
 	templateSVC  *template.ApplicationService
 	openAuthSVC  *openauth.OpenAuthApplicationService
 	uploadSVC    *upload.UploadService
+	mcpSVC       *mcp.MCPApplicationService
 
 	permissionSVC *permission.PermissionApplicationService
 }
@@ -160,6 +163,7 @@ func Init(ctx context.Context) (err error) {
 	crossworkflow.SetDefaultSVC(workflowImpl.InitDomainService(primaryServices.workflowSVC.DomainSVC))
 	crossconversation.SetDefaultSVC(conversationImpl.InitDomainService(complexServices.conversationSVC.ConversationDomainSVC))
 	crossmessage.SetDefaultSVC(messageImpl.InitDomainService(complexServices.conversationSVC.MessageDomainSVC))
+	crossmcp.SetDefaultSVC(mcpImpl.InitDomainService(basicServices.mcpSVC.DomainSVC))
 	crossagentrun.SetDefaultSVC(agentrunImpl.InitDomainService(complexServices.conversationSVC.AgentRunDomainSVC))
 	crossagent.SetDefaultSVC(singleagentImpl.InitDomainService(complexServices.singleAgentSVC.DomainSVC))
 	crossuser.SetDefaultSVC(crossuserImpl.InitDomainService(basicServices.userSVC.DomainSVC))
@@ -185,7 +189,7 @@ func initEventBus(infra *appinfra.AppDependencies) *eventbusImpl {
 func initBasicServices(ctx context.Context, infra *appinfra.AppDependencies, e *eventbusImpl) (*basicServices, error) {
 	uploadSVC := upload.InitService(&upload.UploadComponents{Cache: infra.CacheCli, Oss: infra.OSS, DB: infra.DB, Idgen: infra.IDGenSVC})
 	openAuthSVC := openauth.InitService(infra.DB, infra.IDGenSVC)
-	mcp.InitService(infra.DB, infra.IDGenSVC, e.resourceEventBus)
+	mcpSVC := mcp.InitService(infra.DB, infra.IDGenSVC, e.resourceEventBus)
 	promptSVC := prompt.InitService(infra.DB, infra.IDGenSVC, e.resourceEventBus)
 	modelMgrSVC := modelmgr.InitService(infra.OSS)
 	connectorSVC := connector.InitService(infra.OSS)
@@ -208,6 +212,7 @@ func initBasicServices(ctx context.Context, infra *appinfra.AppDependencies, e *
 		templateSVC:  templateSVC,
 		openAuthSVC:  openAuthSVC,
 		uploadSVC:    uploadSVC,
+		mcpSVC:       mcpSVC,
 
 		permissionSVC: permissionSVC,
 	}, nil
@@ -348,7 +353,7 @@ func (p *primaryServices) toSingleAgentServiceComponents() *singleagent.ServiceC
 		WorkflowDomainSVC:    p.workflowSVC.DomainSVC,
 		VariablesDomainSVC:   p.memorySVC.VariablesDomainSVC,
 		ShortcutCMDDomainSVC: p.shortcutSVC.ShortCutDomainSVC,
-		MCPServerReader:      mcprepository.NewMCPServerRepo(p.basicServices.infra.DB, p.basicServices.infra.IDGenSVC),
+		MCPServerReader:      mcprepository.NewMCPServerReadRepo(p.basicServices.infra.DB, p.basicServices.infra.IDGenSVC),
 		CPStore:              checkpoint.NewRedisStore(p.infra.CacheCli),
 	}
 }

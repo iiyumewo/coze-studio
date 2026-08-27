@@ -17,6 +17,7 @@
 import { type FC, useState } from 'react';
 
 import { useRequest } from 'ahooks';
+import { type MCPServerItem } from '@coze-studio/bot-detail-store/skill-types';
 import { I18n } from '@coze-arch/i18n';
 import { IconCozEmpty, IconCozLink } from '@coze-arch/coze-design/icons';
 import {
@@ -33,7 +34,7 @@ import { PluginDevelopApi } from '@coze-arch/bot-api';
 interface McpSelectorModalProps {
   selectedServerIds: string[];
   onCancel: () => void;
-  onConfirm: (serverIds: string[]) => void;
+  onConfirm: (servers: MCPServerItem[]) => void;
 }
 
 type AvailableMcpServer = ResourceInfo & { res_id: string };
@@ -137,7 +138,18 @@ export const McpSelectorModal: FC<McpSelectorModalProps> = ({
       okText={I18n.t('Confirm')}
       okButtonProps={{ disabled: loading || Boolean(error) || !spaceId }}
       onCancel={onCancel}
-      onOk={() => onConfirm(pendingServerIds)}
+      onOk={() =>
+        onConfirm(
+          availableServers
+            .filter(server => pendingServerIds.includes(server.res_id))
+            .map(server => ({
+              mcp_server_id: server.res_id,
+              name: server.name,
+              tool_count: parseToolCount(server.biz_extend?.tool_count),
+              status: server.biz_res_status,
+            })),
+        )
+      }
     >
       {loading ? (
         <div

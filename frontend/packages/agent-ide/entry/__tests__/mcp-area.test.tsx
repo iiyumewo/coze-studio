@@ -20,14 +20,24 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { McpArea } from '../src/modes/single-mode/section-area/agent-config-area/mcp-area';
 
 const mocks = vi.hoisted(() => ({
-  mcpServers: [] as Array<{ mcp_server_id: string }>,
+  mcpServers: [] as Array<{
+    mcp_server_id: string;
+    name?: string;
+    tool_count?: number;
+    status?: number;
+  }>,
   updateSkillMCPServers: vi.fn(),
 }));
 
 vi.mock('@coze-studio/bot-detail-store/bot-skill', () => ({
   useBotSkillStore: (
     selector: (state: {
-      mcpServers: Array<{ mcp_server_id: string }>;
+      mcpServers: Array<{
+        mcp_server_id: string;
+        name?: string;
+        tool_count?: number;
+        status?: number;
+      }>;
       updateSkillMCPServers: typeof mocks.updateSkillMCPServers;
     }) => unknown,
   ) =>
@@ -85,14 +95,29 @@ vi.mock(
     }: {
       selectedServerIds: string[];
       onCancel: () => void;
-      onConfirm: (serverIds: string[]) => void;
+      onConfirm: (
+        servers: Array<{
+          mcp_server_id: string;
+          name?: string;
+          tool_count?: number;
+          status?: number;
+        }>,
+      ) => void;
     }) => (
       <div data-testid="mcp-selector-modal">
         <span>{selectedServerIds.join(',')}</span>
         <button type="button" onClick={onCancel}>
           Cancel selector
         </button>
-        <button type="button" onClick={() => onConfirm(['200', '300'])}>
+        <button
+          type="button"
+          onClick={() =>
+            onConfirm([
+              { mcp_server_id: '200', name: 'Filesystem', tool_count: 12 },
+              { mcp_server_id: '300', name: 'Time', tool_count: 2 },
+            ])
+          }
+        >
           Confirm selector
         </button>
       </div>
@@ -106,11 +131,12 @@ vi.mock('@coze-arch/coze-design/icons', () => ({
 
 vi.mock('@coze-arch/i18n', () => ({
   I18n: {
-    t: (key: string) =>
+    t: (key: string, variables?: { n?: number }) =>
       ({
         bot_edit_mcp_explain: 'Add configured MCP services to this agent.',
         bot_edit_mcp_select_title: 'Select MCP services',
         library_resource_type_mcp: 'MCP Service',
+        bot_edit_page_plugin_list_plugin_has_n_tools: `Tools: ${variables?.n}`,
       })[key] ?? key,
   },
 }));
@@ -136,13 +162,19 @@ describe('McpArea', () => {
   });
 
   it('renders every selected MCP server reference', () => {
-    mocks.mcpServers = [{ mcp_server_id: '100' }, { mcp_server_id: '200' }];
+    mocks.mcpServers = [
+      { mcp_server_id: '100', name: 'Playwright', tool_count: 24 },
+      { mcp_server_id: '200' },
+    ];
 
     render(<McpArea title="MCP Service" />);
 
-    expect(screen.getAllByTestId('bot.editor.tool.mcp.item')).toHaveLength(2);
-    expect(screen.getByText('100')).toBeTruthy();
-    expect(screen.getByText('200')).toBeTruthy();
+    const items = screen.getAllByTestId('bot.editor.tool.mcp.item');
+    expect(items).toHaveLength(2);
+    expect(screen.getByText('Playwright')).toBeTruthy();
+    expect(screen.getByText('Tools: 24')).toBeTruthy();
+    expect(within(items[1]).getByText('MCP Service')).toBeTruthy();
+    expect(within(items[1]).getByText('200')).toBeTruthy();
     expect(
       screen
         .getByTestId('mcp-tool-content-block')
@@ -163,8 +195,8 @@ describe('McpArea', () => {
 
     fireEvent.click(screen.getByText('Confirm selector'));
     expect(mocks.updateSkillMCPServers).toHaveBeenCalledWith([
-      { mcp_server_id: '200' },
-      { mcp_server_id: '300' },
+      { mcp_server_id: '200', name: 'Filesystem', tool_count: 12 },
+      { mcp_server_id: '300', name: 'Time', tool_count: 2 },
     ]);
     expect(screen.queryByTestId('mcp-selector-modal')).toBeNull();
   });

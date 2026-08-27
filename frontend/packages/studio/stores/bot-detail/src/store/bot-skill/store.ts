@@ -21,7 +21,6 @@ import { produce } from 'immer';
 import {
   type HookInfo,
   type LayoutInfo,
-  type MCPInfo,
   type BackgroundImageInfo,
   type GetDraftBotInfoAgwData,
 } from '@coze-arch/bot-api/playground_api';
@@ -52,6 +51,7 @@ import {
   type TTSInfo,
   type VariableItem,
   type WorkFlowItemType,
+  type MCPServerItem,
 } from '../../types/skill';
 import { transformDto2Vo, transformVo2Dto } from './transform';
 import {
@@ -106,7 +106,7 @@ export interface BotSkillStore {
   /** Selected workflow */
   workflows: WorkFlowItemType[];
   /** Selected MCP servers */
-  mcpServers: MCPInfo[];
+  mcpServers: MCPServerItem[];
   /** Knowledge Allocation */
   knowledge: KnowledgeConfig;
   // endregion
@@ -162,7 +162,7 @@ export interface BotSkillAction {
   setBotSkillByImmer: (update: (state: BotSkillStore) => void) => void;
   updateSkillPluginApis: (pluginApis: PluginApi[]) => void;
   updateSkillWorkflows: (workflows: WorkFlowItemType[]) => void;
-  updateSkillMCPServers: (mcpServers: MCPInfo[]) => void;
+  updateSkillMCPServers: (mcpServers: MCPServerItem[]) => void;
   updateSkillKnowledgeDatasetList: (
     dataSetList: KnowledgeConfig['dataSetList'],
   ) => void;
@@ -278,7 +278,10 @@ export const useBotSkillStore = create<BotSkillStore & BotSkillAction>()(
             botInfo?.workflow_info_list,
             optionData?.workflow_detail_map,
           ),
-          mcpServers: botInfo?.mcp_info_list ?? [],
+          mcpServers: transformDto2Vo.mcp(
+            botInfo?.mcp_info_list,
+            optionData?.mcp_server_detail_map,
+          ),
           knowledge: transformDto2Vo.knowledge(
             botInfo?.knowledge,
             optionData?.knowledge_detail_map,

@@ -148,6 +148,51 @@ func TestMCPServerDAOGetByID(t *testing.T) {
 	})
 }
 
+func TestMCPServerDAOMGetByIDs(t *testing.T) {
+	const spaceID int64 = 100
+
+	sqlDB, sqlMock, err := sqlmock.New()
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, sqlDB.Close())
+		require.NoError(t, sqlMock.ExpectationsWereMet())
+	})
+
+	db, err := gorm.Open(mysql.New(mysql.Config{
+		Conn:                      sqlDB,
+		SkipInitializeWithVersion: true,
+	}), &gorm.Config{SkipDefaultTransaction: true})
+	require.NoError(t, err)
+
+	controller := gomock.NewController(t)
+	idGen := idgenmock.NewMockIDGenerator(controller)
+	dao := NewMCPServerDAO(db, idGen)
+
+	t.Run("return empty list for empty IDs", func(t *testing.T) {
+		servers, err := dao.MGetByIDs(context.Background(), spaceID, nil)
+		require.NoError(t, err)
+		require.Empty(t, servers)
+	})
+
+	query := regexp.QuoteMeta("SELECT * FROM `mcp_server` WHERE `mcp_server`.`space_id` = ? AND `mcp_server`.`id` IN (?,?) AND `mcp_server`.`deleted_at` IS NULL")
+	rows := sqlmock.NewRows([]string{
+		"id", "space_id", "name", "server_url", "transport", "auth_type", "tools",
+		"status", "validation_status", "last_checked_at", "created_at", "updated_at", "deleted_at",
+	}).
+		AddRow(12345, spaceID, "Playwright", "http://localhost:8931/mcp", "streamable_http", "none",
+			`[{"name":"browser_navigate","input_schema":{"type":"object"}}]`, 1, "success", 1000, 900, 1000, nil).
+		AddRow(12346, spaceID, "MySQL", "http://localhost:8932/mcp", "streamable_http", "none",
+			`[{"name":"query","input_schema":{"type":"object"}}]`, 1, "success", 1000, 900, 1000, nil)
+	sqlMock.ExpectQuery(query).WithArgs(spaceID, int64(12345), int64(12346)).WillReturnRows(rows)
+	sqlMock.ExpectClose()
+
+	servers, err := dao.MGetByIDs(context.Background(), spaceID, []int64{12345, 12346})
+	require.NoError(t, err)
+	require.Len(t, servers, 2)
+	require.Equal(t, "browser_navigate", servers[0].Tools[0].Name)
+	require.Equal(t, "query", servers[1].Tools[0].Name)
+}
+
 func TestMCPServerDAODelete(t *testing.T) {
 	const (
 		serverID int64 = 12345

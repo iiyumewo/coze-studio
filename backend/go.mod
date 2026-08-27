@@ -284,6 +284,7 @@ require (
 
 require (
 	github.com/apache/pulsar-client-go v0.16.0
+	github.com/eino-contrib/jsonschema v1.0.0
 	github.com/eino-contrib/ollama v0.1.0
 	github.com/modelcontextprotocol/go-sdk v1.3.1
 	github.com/nats-io/nats.go v1.34.1
@@ -300,7 +301,6 @@ require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/danieljoos/wincred v1.1.2 // indirect
 	github.com/dvsekhvalnov/jose2go v1.6.0 // indirect
-	github.com/eino-contrib/jsonschema v1.0.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect

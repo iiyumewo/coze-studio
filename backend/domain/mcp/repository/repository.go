@@ -30,8 +30,17 @@ func NewMCPServerRepo(db *gorm.DB, idGen idgen.IDGenerator) MCPServerRepository 
 	return dal.NewMCPServerDAO(db, idGen)
 }
 
+func NewMCPServerReadRepo(db *gorm.DB, idGen idgen.IDGenerator) MCPServerReadRepository {
+	return dal.NewMCPServerDAO(db, idGen)
+}
+
 type MCPServerRepository interface {
 	Create(ctx context.Context, server *entity.MCPServer) (*entity.MCPServer, error)
 	GetByID(ctx context.Context, id int64) (*entity.MCPServer, error)
 	Delete(ctx context.Context, id, spaceID int64) error
+}
+
+type MCPServerReadRepository interface {
+	GetByID(ctx context.Context, id int64) (*entity.MCPServer, error)
+	MGetByIDs(ctx context.Context, spaceID int64, ids []int64) ([]*entity.MCPServer, error)
 }

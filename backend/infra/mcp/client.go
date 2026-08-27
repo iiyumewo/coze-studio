@@ -19,6 +19,7 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -35,7 +36,7 @@ const (
 	maxServerURLLength           = 2048
 	maxAuthenticationHeaderName  = 128
 	maxAuthenticationHeaderValue = 2048
-	clientName                   = "coze-studio-mcp-validator"
+	clientName                   = "coze-studio-mcp-client"
 	clientVersion                = "0.1.0"
 )
 
@@ -52,6 +53,10 @@ type client struct {
 }
 
 func NewClient() Client {
+	return newClient(clientOptions{})
+}
+
+func NewToolClient() ToolClient {
 	return newClient(clientOptions{})
 }
 
@@ -82,28 +87,7 @@ func (c *client) Test(ctx context.Context, request *TestRequest) (*TestResult, e
 	testCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	httpClient := &http.Client{
-		Timeout: c.timeout,
-		Transport: &requestRoundTripper{
-			base:                 c.transport,
-			authentication:       authentication,
-			maxResponseBodyBytes: c.maxResponseBodyBytes,
-		},
-		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
-			return ErrRedirectNotAllowed
-		},
-	}
-
-	sdkClient := mcpsdk.NewClient(&mcpsdk.Implementation{
-		Name:    clientName,
-		Version: clientVersion,
-	}, nil)
-	session, err := sdkClient.Connect(testCtx, &mcpsdk.StreamableClientTransport{
-		Endpoint:             endpoint,
-		HTTPClient:           httpClient,
-		MaxRetries:           -1,
-		DisableStandaloneSSE: true,
-	}, nil)
+	session, err := c.connect(testCtx, endpoint, authentication)
 	if err != nil {
 		return nil, safeStageError(ErrConnectServer, err, authentication.HeaderValue)
 	}
@@ -135,6 +119,106 @@ func (c *client) Test(ctx context.Context, request *TestRequest) (*TestResult, e
 		Instructions:    initializeResult.Instructions,
 		Tools:           tools,
 	}, nil
+}
+
+func (c *client) CallTool(ctx context.Context, request *CallToolRequest) (*CallToolResult, error) {
+	endpoint, authentication, toolName, arguments, err := validateCallToolRequest(request)
+	if err != nil {
+		return nil, err
+	}
+
+	callCtx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	session, err := c.connect(callCtx, endpoint, authentication)
+	if err != nil {
+		return nil, safeStageError(ErrConnectServer, err, authentication.HeaderValue)
+	}
+	defer session.Close()
+
+	result, err := session.CallTool(callCtx, &mcpsdk.CallToolParams{
+		Name:      toolName,
+		Arguments: arguments,
+	})
+	if err != nil {
+		return nil, safeStageError(ErrCallTool, err, authentication.HeaderValue)
+	}
+
+	normalizedResult, err := normalizeCallToolResult(result)
+	if err != nil {
+		return nil, safeStageError(ErrNormalizeToolResult, err, authentication.HeaderValue)
+	}
+
+	return normalizedResult, nil
+}
+
+func (c *client) connect(
+	ctx context.Context,
+	endpoint string,
+	authentication Authentication,
+) (*mcpsdk.ClientSession, error) {
+	httpClient := &http.Client{
+		Timeout: c.timeout,
+		Transport: &requestRoundTripper{
+			base:                 c.transport,
+			authentication:       authentication,
+			maxResponseBodyBytes: c.maxResponseBodyBytes,
+		},
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return ErrRedirectNotAllowed
+		},
+	}
+
+	sdkClient := mcpsdk.NewClient(&mcpsdk.Implementation{
+		Name:    clientName,
+		Version: clientVersion,
+	}, &mcpsdk.ClientOptions{
+		Capabilities: &mcpsdk.ClientCapabilities{},
+	})
+
+	return sdkClient.Connect(ctx, &mcpsdk.StreamableClientTransport{
+		Endpoint:             endpoint,
+		HTTPClient:           httpClient,
+		MaxRetries:           -1,
+		DisableStandaloneSSE: true,
+	}, nil)
+}
+
+func validateCallToolRequest(
+	request *CallToolRequest,
+) (string, Authentication, string, map[string]any, error) {
+	if request == nil {
+		return "", Authentication{}, "", nil,
+			fmt.Errorf("%w: request is required", ErrInvalidCallToolRequest)
+	}
+
+	endpoint, authentication, err := validateRequest(&TestRequest{
+		ServerURL:      request.ServerURL,
+		Authentication: request.Authentication,
+	})
+	if err != nil {
+		return "", Authentication{}, "", nil,
+			fmt.Errorf("%w: %s", ErrInvalidCallToolRequest, err.Error())
+	}
+
+	toolName := strings.TrimSpace(request.ToolName)
+	if toolName == "" {
+		return "", Authentication{}, "", nil,
+			fmt.Errorf("%w: tool name is required", ErrInvalidCallToolRequest)
+	}
+
+	arguments := make(map[string]any)
+	if len(request.Arguments) > 0 {
+		if err = json.Unmarshal(request.Arguments, &arguments); err != nil {
+			return "", Authentication{}, "", nil,
+				fmt.Errorf("%w: tool arguments must be a JSON object: %v", ErrInvalidCallToolRequest, err)
+		}
+		if arguments == nil {
+			arguments = make(map[string]any)
+		}
+	}
+
+	return endpoint, authentication, toolName, arguments, nil
 }
 
 func validateRequest(request *TestRequest) (string, Authentication, error) {
@@ -250,6 +334,34 @@ func normalizeTool(tool *mcpsdk.Tool) (*Tool, error) {
 		InputSchema:  inputSchema,
 		OutputSchema: outputSchema,
 		Annotations:  annotations,
+	}, nil
+}
+
+func normalizeCallToolResult(result *mcpsdk.CallToolResult) (*CallToolResult, error) {
+	if result == nil {
+		return nil, errors.New("tool result is nil")
+	}
+
+	outputParts := make([]string, 0, len(result.Content)+1)
+	for _, content := range result.Content {
+		textContent, ok := content.(*mcpsdk.TextContent)
+		if !ok {
+			return nil, fmt.Errorf("unsupported MCP tool content type %T", content)
+		}
+		outputParts = append(outputParts, textContent.Text)
+	}
+
+	if result.StructuredContent != nil {
+		structuredContent, err := json.Marshal(result.StructuredContent)
+		if err != nil {
+			return nil, fmt.Errorf("marshal structured tool result: %w", err)
+		}
+		outputParts = append(outputParts, string(structuredContent))
+	}
+
+	return &CallToolResult{
+		Output:  strings.Join(outputParts, "\n"),
+		IsError: result.IsError,
 	}, nil
 }
 

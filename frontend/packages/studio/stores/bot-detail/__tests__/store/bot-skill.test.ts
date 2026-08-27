@@ -104,7 +104,9 @@ describe('useBotSkillStore', () => {
   });
 
   it('updateSkillMCPServers', () => {
-    const mcpServers = [{ mcp_server_id: '200' }];
+    const mcpServers = [
+      { mcp_server_id: '200', name: 'Filesystem', tool_count: 12 },
+    ];
 
     useBotSkillStore.getState().updateSkillMCPServers(mcpServers);
 
@@ -283,6 +285,14 @@ describe('useBotSkillStore', () => {
         workflow_detail_map: {},
         knowledge_detail_map: {},
         shortcut_command_list: [],
+        mcp_server_detail_map: {
+          '200': {
+            id: '200',
+            name: 'Filesystem',
+            tool_count: 12,
+            status: 1,
+          },
+        },
       },
     };
     useBotSkillStore.getState().initStore(botData);
@@ -290,7 +300,14 @@ describe('useBotSkillStore', () => {
     const defaultState = getDefaultBotSkillStore();
     expect(state.pluginApis).toEqual([]);
     expect(state.workflows).toEqual([]);
-    expect(state.mcpServers).toEqual([{ mcp_server_id: '200' }]);
+    expect(state.mcpServers).toEqual([
+      {
+        mcp_server_id: '200',
+        name: 'Filesystem',
+        tool_count: 12,
+        status: 1,
+      },
+    ]);
     expect(state.knowledge).toEqual({
       dataSetInfo: {
         auto: false,

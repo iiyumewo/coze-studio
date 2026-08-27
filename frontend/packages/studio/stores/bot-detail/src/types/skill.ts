@@ -28,6 +28,7 @@ import {
   type RecallStrategy,
   type DefaultUserInputType,
   type PluginFrom,
+  type MCPInfo,
 } from '@coze-arch/bot-api/playground_api';
 import { type BotTableRWMode, type FieldItem } from '@coze-arch/bot-api/memory';
 import { type Dataset } from '@coze-arch/bot-api/knowledge';
@@ -53,6 +54,12 @@ interface DefaultPluginApi extends PluginApi {
   // #endregion
 }
 export type EnabledPluginApi = Omit<DefaultPluginApi, 'debug_example'>;
+
+export interface MCPServerItem extends MCPInfo {
+  name?: string;
+  tool_count?: number;
+  status?: number;
+}
 
 export interface BotDetailSkill {
   // Region Bot and Agent dimension common skills

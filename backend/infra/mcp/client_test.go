@@ -98,6 +98,73 @@ func TestClientTest(t *testing.T) {
 	}
 }
 
+func TestClientCallTool(t *testing.T) {
+	testServer, deleteRequests := newMCPTestServer(t, "Bearer test-secret")
+	defer testServer.Close()
+
+	toolClient := NewToolClient()
+	authentication := Authentication{
+		Type:        AuthenticationTypeHeader,
+		HeaderName:  "Authorization",
+		HeaderValue: "Bearer test-secret",
+	}
+
+	result, err := toolClient.CallTool(context.Background(), &CallToolRequest{
+		ServerURL:      testServer.URL,
+		Authentication: authentication,
+		ToolName:       "lookup",
+		Arguments:      json.RawMessage(`{"key":"coze"}`),
+	})
+	if err != nil {
+		t.Fatalf("CallTool() error = %v", err)
+	}
+	if result.IsError {
+		t.Fatal("CallTool() unexpectedly returned a tool error")
+	}
+	if result.Output != "found coze\n{\"value\":\"coze\"}" {
+		t.Fatalf("CallTool() output = %q", result.Output)
+	}
+
+	errorResult, err := toolClient.CallTool(context.Background(), &CallToolRequest{
+		ServerURL:      testServer.URL,
+		Authentication: authentication,
+		ToolName:       "write",
+		Arguments:      json.RawMessage(`{}`),
+	})
+	if err != nil {
+		t.Fatalf("CallTool() tool error = %v, want MCP result", err)
+	}
+	if !errorResult.IsError || errorResult.Output != "write rejected" {
+		t.Fatalf("CallTool() error result = %#v", errorResult)
+	}
+	if deleteRequests.Load() < 2 {
+		t.Fatal("MCP tool-call sessions were not closed")
+	}
+}
+
+func TestClientDoesNotAdvertiseRoots(t *testing.T) {
+	testServer, _ := newMCPTestServer(t, "")
+	defer testServer.Close()
+
+	transport := &initializeCaptureRoundTripper{base: http.DefaultTransport}
+	tester := newClient(clientOptions{transport: transport})
+	_, err := tester.Test(context.Background(), &TestRequest{
+		ServerURL:      testServer.URL,
+		Authentication: Authentication{Type: AuthenticationTypeNone},
+	})
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+
+	capabilities := transport.initializeCapabilities()
+	if capabilities == nil {
+		t.Fatal("initialize request was not captured")
+	}
+	if _, exists := capabilities["roots"]; exists {
+		t.Fatalf("initialize capabilities = %#v, want roots disabled", capabilities)
+	}
+}
+
 func TestValidateRequest(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -125,6 +192,43 @@ func TestValidateRequest(t *testing.T) {
 			}
 		})
 	}
+}
+
+type initializeCaptureRoundTripper struct {
+	base         http.RoundTripper
+	mu           sync.Mutex
+	capabilities map[string]any
+}
+
+func (t *initializeCaptureRoundTripper) RoundTrip(request *http.Request) (*http.Response, error) {
+	if request.Body != nil {
+		body, err := io.ReadAll(request.Body)
+		if err != nil {
+			return nil, err
+		}
+		request.Body = io.NopCloser(bytes.NewReader(body))
+
+		var message struct {
+			Method string `json:"method"`
+			Params struct {
+				Capabilities map[string]any `json:"capabilities"`
+			} `json:"params"`
+		}
+		if json.Unmarshal(body, &message) == nil && message.Method == "initialize" {
+			t.mu.Lock()
+			t.capabilities = message.Params.Capabilities
+			t.mu.Unlock()
+		}
+	}
+
+	return t.base.RoundTrip(request)
+}
+
+func (t *initializeCaptureRoundTripper) initializeCapabilities() map[string]any {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	return t.capabilities
 }
 
 func TestClientTestTimesOut(t *testing.T) {
@@ -271,12 +375,28 @@ func newMCPTestServer(t *testing.T, expectedAuthorization string) (*httptest.Ser
 			ReadOnlyHint:    true,
 			DestructiveHint: &destructiveHint,
 		},
-	}, nil)
+	}, func(_ context.Context, request *mcpsdk.CallToolRequest) (*mcpsdk.CallToolResult, error) {
+		var arguments struct {
+			Key string `json:"key"`
+		}
+		if err := json.Unmarshal(request.Params.Arguments, &arguments); err != nil {
+			return nil, err
+		}
+		return &mcpsdk.CallToolResult{
+			Content:           []mcpsdk.Content{&mcpsdk.TextContent{Text: "found " + arguments.Key}},
+			StructuredContent: map[string]any{"value": arguments.Key},
+		}, nil
+	})
 	sdkServer.AddTool(&mcpsdk.Tool{
 		Name:        "write",
 		Description: "Writes a value.",
 		InputSchema: map[string]any{"type": "object"},
-	}, nil)
+	}, func(context.Context, *mcpsdk.CallToolRequest) (*mcpsdk.CallToolResult, error) {
+		return &mcpsdk.CallToolResult{
+			Content: []mcpsdk.Content{&mcpsdk.TextContent{Text: "write rejected"}},
+			IsError: true,
+		}, nil
+	})
 
 	streamableHandler := mcpsdk.NewStreamableHTTPHandler(func(*http.Request) *mcpsdk.Server {
 		return sdkServer

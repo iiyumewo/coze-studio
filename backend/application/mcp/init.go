@@ -21,6 +21,7 @@ import (
 
 	"github.com/coze-dev/coze-studio/backend/application/search"
 	"github.com/coze-dev/coze-studio/backend/domain/mcp/repository"
+	mcpservice "github.com/coze-dev/coze-studio/backend/domain/mcp/service"
 	"github.com/coze-dev/coze-studio/backend/infra/idgen"
 	mcpinfra "github.com/coze-dev/coze-studio/backend/infra/mcp"
 )
@@ -31,6 +32,10 @@ func InitService(db *gorm.DB, idGen idgen.IDGenerator, eventBus search.ResourceE
 		repository.NewMCPServerRepo(db, idGen),
 		eventBus,
 	)
+	MCPApplicationSVC.DomainSVC = mcpservice.NewService(&mcpservice.Components{
+		ServerRepo: repository.NewMCPServerReadRepo(db, idGen),
+		ToolClient: mcpinfra.NewToolClient(),
+	})
 
 	return MCPApplicationSVC
 }

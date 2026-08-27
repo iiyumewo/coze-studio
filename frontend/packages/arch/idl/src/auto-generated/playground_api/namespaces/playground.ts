@@ -1615,6 +1615,17 @@ export interface BotLastVersionProcessRequest {
 
 export interface BotLastVersionProcessResponse {}
 
+export interface MCPServerDetail {
+  /** MCP Server ID */
+  id?: Int64;
+  /** MCP Server display name */
+  name?: string;
+  /** Number of tools in the saved snapshot */
+  tool_count?: number;
+  /** MCP Server status */
+  status?: number;
+}
+
 export interface BotOptionData {
   /** 模型详情 */
   model_detail_map?: Record<Int64, ModelDetail>;
@@ -1628,6 +1639,8 @@ export interface BotOptionData {
   knowledge_detail_map?: Record<string, KnowledgeDetail>;
   /** 快捷指令list */
   shortcut_command_list?: Array<shortcut_command.ShortcutCommand>;
+  /** MCP Server details */
+  mcp_server_detail_map?: Record<Int64, MCPServerDetail>;
   /** 知识服务详情 */
   volcano_dataset_service_detail_map?: Record<
     string,

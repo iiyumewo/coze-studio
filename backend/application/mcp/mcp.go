@@ -19,10 +19,12 @@ package mcp
 import (
 	"github.com/coze-dev/coze-studio/backend/application/search"
 	"github.com/coze-dev/coze-studio/backend/domain/mcp/repository"
+	mcpservice "github.com/coze-dev/coze-studio/backend/domain/mcp/service"
 	mcpinfra "github.com/coze-dev/coze-studio/backend/infra/mcp"
 )
 
 type MCPApplicationService struct {
+	DomainSVC     mcpservice.MCPService
 	mcpClient     mcpinfra.Client
 	mcpServerRepo repository.MCPServerRepository
 	eventBus      search.ResourceEventBus

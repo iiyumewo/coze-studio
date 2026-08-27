@@ -18,14 +18,12 @@ package mcp
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"os"
 
 	basemodel "github.com/coze-dev/coze-studio/backend/api/model/base"
 	mcpmodel "github.com/coze-dev/coze-studio/backend/api/model/mcp"
 	mcpentity "github.com/coze-dev/coze-studio/backend/domain/mcp/entity"
-	pluginencrypt "github.com/coze-dev/coze-studio/backend/domain/plugin/encrypt"
+	mcpinfra "github.com/coze-dev/coze-studio/backend/infra/mcp"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/ptr"
 	"github.com/coze-dev/coze-studio/backend/types/errno"
@@ -114,36 +112,17 @@ func convertMCPAuthenticationDetail(
 	server *mcpentity.MCPServer,
 ) (*mcpmodel.MCPServerAuthenticationData, error) {
 	authentication := &mcpmodel.MCPServerAuthenticationData{Type: string(server.AuthType)}
-
-	switch server.AuthType {
-	case mcpentity.AuthenticationTypeNone:
-		return authentication, nil
-	case mcpentity.AuthenticationTypeHeader:
-		if server.EncryptedAuth == nil || *server.EncryptedAuth == "" {
-			return nil, errors.New("encrypted MCP authentication is required")
-		}
-	default:
-		return nil, errors.New("unsupported stored MCP authentication type")
-	}
-
-	secret := os.Getenv(pluginencrypt.AuthSecretEnv)
-	if secret == "" {
-		secret = pluginencrypt.DefaultAuthSecret
-	}
-	decryptedAuth, err := pluginencrypt.DecryptByAES(*server.EncryptedAuth, secret)
+	decryptedAuthentication, err := mcpinfra.DecryptAuthentication(
+		mcpinfra.AuthenticationType(server.AuthType),
+		server.EncryptedAuth,
+	)
 	if err != nil {
 		return nil, err
 	}
-
-	var payload headerAuthenticationPayload
-	if err = json.Unmarshal(decryptedAuth, &payload); err != nil {
-		return nil, err
-	}
-	if payload.HeaderName == "" {
-		return nil, errors.New("MCP authentication header name is required")
+	if decryptedAuthentication.Type == mcpinfra.AuthenticationTypeHeader {
+		authentication.HeaderName = ptr.Of(decryptedAuthentication.HeaderName)
 	}
 
-	authentication.HeaderName = ptr.Of(payload.HeaderName)
 	return authentication, nil
 }
 

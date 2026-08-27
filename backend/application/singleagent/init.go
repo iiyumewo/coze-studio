@@ -48,6 +48,7 @@ type (
 
 type MCPServerReader interface {
 	GetByID(ctx context.Context, id int64) (*mcpentity.MCPServer, error)
+	MGetByIDs(ctx context.Context, spaceID int64, ids []int64) ([]*mcpentity.MCPServer, error)
 }
 
 var SingleAgentSVC *SingleAgentApplicationService

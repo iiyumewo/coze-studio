@@ -18,9 +18,7 @@ package mcp
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"os"
 	"strings"
 
 	basemodel "github.com/coze-dev/coze-studio/backend/api/model/base"
@@ -29,7 +27,6 @@ import (
 	"github.com/coze-dev/coze-studio/backend/application/base/ctxutil"
 	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/user"
 	mcpentity "github.com/coze-dev/coze-studio/backend/domain/mcp/entity"
-	pluginencrypt "github.com/coze-dev/coze-studio/backend/domain/plugin/encrypt"
 	searchentity "github.com/coze-dev/coze-studio/backend/domain/search/entity"
 	mcpinfra "github.com/coze-dev/coze-studio/backend/infra/mcp"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
@@ -55,10 +52,7 @@ type testedMCPServer struct {
 	testResult    *mcpinfra.TestResult
 }
 
-type headerAuthenticationPayload struct {
-	HeaderName  string `json:"header_name"`
-	HeaderValue string `json:"header_value"`
-}
+type headerAuthenticationPayload = mcpinfra.HeaderAuthenticationPayload
 
 func (s *MCPApplicationService) TestAndCreateMCPServer(
 	ctx context.Context,
@@ -274,25 +268,12 @@ func encryptAuthentication(authentication mcpinfra.Authentication) (mcpentity.Au
 			errorx.KV("msg", "unsupported authentication type"))
 	}
 
-	payload, err := json.Marshal(&headerAuthenticationPayload{
-		HeaderName:  authentication.HeaderName,
-		HeaderValue: authentication.HeaderValue,
-	})
+	encryptedAuth, err := mcpinfra.EncryptAuthentication(authentication)
 	if err != nil {
 		return "", nil, errorx.WrapByCode(err, errno.ErrMCPCreateCode)
 	}
 
-	secret := os.Getenv(pluginencrypt.AuthSecretEnv)
-	if secret == "" {
-		secret = pluginencrypt.DefaultAuthSecret
-	}
-
-	encryptedAuth, err := pluginencrypt.EncryptByAES(payload, secret)
-	if err != nil {
-		return "", nil, errorx.WrapByCode(err, errno.ErrMCPCreateCode)
-	}
-
-	return authType, &encryptedAuth, nil
+	return authType, encryptedAuth, nil
 }
 
 func authorizeWorkspaceAccess(ctx context.Context, spaceID int64) (int64, error) {

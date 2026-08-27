@@ -75,6 +75,13 @@ struct GetDraftBotInfoAgwData {
     20: optional string              app_id // Douyin's doppelganger bot will have appId.
 }
 
+struct MCPServerDetail {
+    1: optional i64 id         (api.js_conv="true", agw.js_conv="str") // MCP Server ID
+    2: optional string name                                           // MCP Server display name
+    3: optional i32 tool_count                                        // Number of tools in the saved snapshot
+    4: optional i32 status                                            // MCP Server status
+}
+
 struct BotOptionData {
     1: optional map<i64,ModelDetail>        model_detail_map      // model details
     2: optional map<i64,PluginDetal>        plugin_detail_map     // plugin details
@@ -82,6 +89,7 @@ struct BotOptionData {
     4: optional map<i64,WorkflowDetail>     workflow_detail_map   // Workflow Details
     5: optional map<string,KnowledgeDetail> knowledge_detail_map  // Knowledge Details
     6: optional list<shortcut_command.ShortcutCommand>   shortcut_command_list  // Quick command list
+    7: optional map<i64,MCPServerDetail>     mcp_server_detail_map // MCP Server details
 }
 
 

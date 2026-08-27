@@ -139,11 +139,15 @@ describe('bot-skill configs', () => {
     const actualMCPModule = (await vi.importActual(
       '../../../../../src/save-manager/auto-save/bot-skill/configs/mcp',
     )) as { mcpConfig: typeof mcpConfig };
-    const mcpServers = [{ mcp_server_id: '200' }];
+    const mcpServers = [
+      { mcp_server_id: '200', name: 'Filesystem', tool_count: 12, status: 1 },
+    ];
 
     const payload =
       await actualMCPModule.mcpConfig.middleware?.onBeforeSave?.(mcpServers);
 
-    expect(payload).toEqual({ mcp_info_list: mcpServers });
+    expect(payload).toEqual({
+      mcp_info_list: [{ mcp_server_id: '200' }],
+    });
   });
 });

@@ -39,6 +39,20 @@ func (f *fakeMCPServerReader) GetByID(_ context.Context, id int64) (*mcpentity.M
 	return f.getByID(id)
 }
 
+func (f *fakeMCPServerReader) MGetByIDs(_ context.Context, spaceID int64, ids []int64) ([]*mcpentity.MCPServer, error) {
+	servers := make([]*mcpentity.MCPServer, 0, len(ids))
+	for _, id := range ids {
+		server, err := f.getByID(id)
+		if err != nil {
+			return nil, err
+		}
+		if server != nil && server.SpaceID == spaceID {
+			servers = append(servers, server)
+		}
+	}
+	return servers, nil
+}
+
 func TestValidateMCPServers(t *testing.T) {
 	const (
 		spaceID  int64 = 100

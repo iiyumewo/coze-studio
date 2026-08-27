@@ -173,7 +173,20 @@ describe('McpSelectorModal', () => {
     fireEvent.click(secondMcp);
     fireEvent.click(screen.getByText('Confirm'));
 
-    expect(onConfirm).toHaveBeenCalledWith(['100', '300']);
+    expect(onConfirm).toHaveBeenCalledWith([
+      {
+        mcp_server_id: '100',
+        name: 'First MCP',
+        status: 1,
+        tool_count: 5,
+      },
+      {
+        mcp_server_id: '300',
+        name: 'Second MCP',
+        status: 1,
+        tool_count: undefined,
+      },
+    ]);
   });
 
   it('keeps the draft unchanged when cancelled', async () => {

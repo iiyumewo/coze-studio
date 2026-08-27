@@ -62,10 +62,15 @@ export const McpArea: FC<McpAreaProps> = ({ title }) => {
                   </div>
                   <div className="min-w-0">
                     <div className="text-sm font-medium leading-[20px] coz-fg-primary">
-                      {I18n.t('library_resource_type_mcp')}
+                      {server.name || I18n.t('library_resource_type_mcp')}
                     </div>
                     <div className="truncate text-xs leading-[18px] coz-fg-secondary">
-                      {server.mcp_server_id}
+                      {server.tool_count === undefined
+                        ? server.mcp_server_id
+                        : I18n.t(
+                            'bot_edit_page_plugin_list_plugin_has_n_tools',
+                            { n: server.tool_count },
+                          )}
                     </div>
                   </div>
                 </div>
@@ -82,10 +87,8 @@ export const McpArea: FC<McpAreaProps> = ({ title }) => {
         <McpSelectorModal
           selectedServerIds={mcpServers.map(server => server.mcp_server_id)}
           onCancel={() => setSelectorVisible(false)}
-          onConfirm={serverIds => {
-            updateSkillMCPServers(
-              serverIds.map(serverId => ({ mcp_server_id: serverId })),
-            );
+          onConfirm={servers => {
+            updateSkillMCPServers(servers);
             setSelectorVisible(false);
           }}
         />

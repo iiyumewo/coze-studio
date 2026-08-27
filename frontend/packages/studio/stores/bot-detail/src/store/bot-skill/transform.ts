@@ -49,6 +49,8 @@ import {
   type LayoutInfo,
   DisablePromptCalling,
   type PluginFrom,
+  type MCPInfo,
+  type MCPServerDetail,
 } from '@coze-arch/bot-api/playground_api';
 import { SuggestReplyMode } from '@coze-arch/bot-api/developer_api';
 import { type ShortCutStruct } from '@coze-agent-ide/tool-config';
@@ -67,6 +69,7 @@ import {
   type DatabaseList,
   type TableMemoryItem,
   type VoicesInfo,
+  type MCPServerItem,
 } from '../../types/skill';
 import {
   DEFAULT_BOT_NODE_SUGGESTION_CONFIG,
@@ -78,6 +81,19 @@ import {
 
 // After the structured BotInfo interface, data transformation
 export const transformDto2Vo = {
+  mcp: (
+    data?: MCPInfo[],
+    details?: Record<Int64, MCPServerDetail>,
+  ): MCPServerItem[] =>
+    data?.map(item => {
+      const detail = details?.[item.mcp_server_id];
+      return {
+        ...item,
+        name: detail?.name,
+        tool_count: detail?.tool_count,
+        status: detail?.status,
+      };
+    }) ?? [],
   plugin: (
     data?: PluginInfo[],
     plugins?: Record<Int64, PluginDetal>,

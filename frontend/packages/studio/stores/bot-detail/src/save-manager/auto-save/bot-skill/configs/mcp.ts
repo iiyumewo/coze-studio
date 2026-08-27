@@ -15,20 +15,24 @@
  */
 
 import { DebounceTime, type HostedObserverConfig } from '@coze-studio/autosave';
-import { type MCPInfo } from '@coze-arch/bot-api/playground_api';
 
+import { type MCPServerItem } from '@/types/skill';
 import { type BotSkillStore } from '@/store/bot-skill';
 import { ItemTypeExtra } from '@/save-manager/types';
 
 export const mcpConfig: HostedObserverConfig<
   BotSkillStore,
   ItemTypeExtra,
-  MCPInfo[]
+  MCPServerItem[]
 > = {
   key: ItemTypeExtra.MCP,
   selector: store => store.mcpServers,
   debounce: DebounceTime.Immediate,
   middleware: {
-    onBeforeSave: mcpServers => ({ mcp_info_list: mcpServers }),
+    onBeforeSave: mcpServers => ({
+      mcp_info_list: mcpServers.map(server => ({
+        mcp_server_id: server.mcp_server_id,
+      })),
+    }),
   },
 };

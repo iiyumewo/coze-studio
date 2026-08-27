@@ -35,6 +35,7 @@ import (
 	workflowModel "github.com/coze-dev/coze-studio/backend/crossdomain/workflow/model"
 	"github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/entity"
 	knowledge "github.com/coze-dev/coze-studio/backend/domain/knowledge/service"
+	mcpEntity "github.com/coze-dev/coze-studio/backend/domain/mcp/entity"
 	pluginEntity "github.com/coze-dev/coze-studio/backend/domain/plugin/entity"
 	shortcutCMDEntity "github.com/coze-dev/coze-studio/backend/domain/shortcutcmd/entity"
 	workflowEntity "github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
@@ -94,6 +95,11 @@ func (s *SingleAgentApplicationService) GetAgentBotInfo(ctx context.Context, req
 		return nil, err
 	}
 
+	mcpServerInfos, err := s.fetchMCPServerDetails(ctx, agentInfo)
+	if err != nil {
+		return nil, err
+	}
+
 	shortCutCmdResp, err := s.fetchShortcutCMD(ctx, agentInfo)
 	if err != nil {
 		return nil, err
@@ -114,6 +120,7 @@ func (s *SingleAgentApplicationService) GetAgentBotInfo(ctx context.Context, req
 				PluginDetailMap:     s.pluginInfoDo2Vo(ctx, pluginInfos),
 				WorkflowDetailMap:   workflowDetailMap,
 				ShortcutCommandList: shortCutCmdResp,
+				McpServerDetailMap:  mcpServerInfoDo2Vo(mcpServerInfos),
 			},
 			SpaceID:   agentInfo.SpaceID,
 			Editable:  ptr.Of(true),
@@ -286,6 +293,27 @@ func (s *SingleAgentApplicationService) fetchWorkflowDetails(ctx context.Context
 	return ret, nil
 }
 
+func (s *SingleAgentApplicationService) fetchMCPServerDetails(ctx context.Context, agentInfo *entity.SingleAgent) ([]*mcpEntity.MCPServer, error) {
+	mcpServerIDs := make([]int64, 0, len(agentInfo.MCP))
+	for _, ref := range agentInfo.MCP {
+		if ref == nil || ref.GetMCPServerID() <= 0 {
+			continue
+		}
+		mcpServerIDs = append(mcpServerIDs, ref.GetMCPServerID())
+	}
+
+	if len(mcpServerIDs) == 0 {
+		return nil, nil
+	}
+
+	mcpServers, err := s.appContext.MCPServerReader.MGetByIDs(ctx, agentInfo.SpaceID, mcpServerIDs)
+	if err != nil {
+		return nil, fmt.Errorf("fetch MCP server details failed: %w", err)
+	}
+
+	return mcpServers, nil
+}
+
 func modelInfoDo2Vo(modelInfos []*modelmgr.Model) map[int64]*playground.ModelDetail {
 	return slices.ToMap(modelInfos, func(e *modelmgr.Model) (int64, *playground.ModelDetail) {
 		return e.ID, toModelDetail(e)
@@ -319,6 +347,17 @@ func knowledgeInfoDo2Vo(klInfos []*knowledgeModel.Knowledge) map[string]*playgro
 				}
 				return playground.DataSetType_Text
 			}(),
+		}
+	})
+}
+
+func mcpServerInfoDo2Vo(mcpServers []*mcpEntity.MCPServer) map[int64]*playground.MCPServerDetail {
+	return slices.ToMap(mcpServers, func(server *mcpEntity.MCPServer) (int64, *playground.MCPServerDetail) {
+		return server.ID, &playground.MCPServerDetail{
+			ID:        ptr.Of(server.ID),
+			Name:      ptr.Of(server.Name),
+			ToolCount: ptr.Of(int32(len(server.Tools))),
+			Status:    ptr.Of(int32(server.Status)),
 		}
 	})
 }
