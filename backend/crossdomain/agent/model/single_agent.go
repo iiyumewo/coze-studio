@@ -70,6 +70,7 @@ type SingleAgent struct {
 	ModelInfo               *bot_common.ModelInfo
 	Prompt                  *bot_common.PromptInfo
 	Plugin                  []*bot_common.PluginInfo
+	MCP                     []*bot_common.MCPInfo
 	Knowledge               *bot_common.Knowledge
 	Workflow                []*bot_common.WorkflowInfo
 	SuggestReply            *bot_common.SuggestReplyInfo

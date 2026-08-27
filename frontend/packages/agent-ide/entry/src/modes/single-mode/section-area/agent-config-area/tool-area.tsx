@@ -41,6 +41,7 @@ import { OnboardingMessage } from '@coze-agent-ide/onboarding-message-adapter';
 
 import s from '../../../../index.module.less';
 import { SkillsModal } from '../../../../components/shortcut-skills-modal';
+import { McpArea } from './mcp-area';
 
 export interface ToolAreaProps {
   isAllToolHidden: boolean;
@@ -88,6 +89,7 @@ export const ToolArea: React.FC<ToolAreaProps> = props => {
                 title={I18n.t('Workflows')}
                 from={WorkflowModalFrom.BotSkills}
               />
+              <McpArea title={I18n.t('library_resource_type_mcp')} />
               {skillToolSlot}
             </GroupingContainer>
             <GroupingContainer

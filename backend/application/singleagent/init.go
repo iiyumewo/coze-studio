@@ -17,6 +17,8 @@
 package singleagent
 
 import (
+	"context"
+
 	"github.com/cloudwego/eino/compose"
 	"gorm.io/gorm"
 
@@ -25,6 +27,7 @@ import (
 	singleagent "github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/service"
 	connector "github.com/coze-dev/coze-studio/backend/domain/connector/service"
 	knowledge "github.com/coze-dev/coze-studio/backend/domain/knowledge/service"
+	mcpentity "github.com/coze-dev/coze-studio/backend/domain/mcp/entity"
 	database "github.com/coze-dev/coze-studio/backend/domain/memory/database/service"
 	variables "github.com/coze-dev/coze-studio/backend/domain/memory/variables/service"
 	"github.com/coze-dev/coze-studio/backend/domain/plugin/service"
@@ -42,6 +45,10 @@ import (
 type (
 	SingleAgent = singleagent.SingleAgent
 )
+
+type MCPServerReader interface {
+	GetByID(ctx context.Context, id int64) (*mcpentity.MCPServer, error)
+}
 
 var SingleAgentSVC *SingleAgentApplicationService
 
@@ -62,6 +69,7 @@ type ServiceComponents struct {
 	ConnectorDomainSVC   connector.Connector
 	DatabaseDomainSVC    database.Database
 	ShortcutCMDDomainSVC shortcutCmd.ShortcutCmd
+	MCPServerReader      MCPServerReader
 	CPStore              compose.CheckPointStore
 }
 

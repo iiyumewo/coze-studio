@@ -655,6 +655,7 @@ export interface BotInfo {
   /** workflow模式的编排信息 */
   layout_info?: LayoutInfo;
   business_type?: BusinessType;
+  mcp_info_list?: Array<MCPInfo>;
   time_capsule_type?: TimeCapsuleType;
   time_capsule_info?: TimeCapsuleInfo;
 }
@@ -725,6 +726,7 @@ export interface BotInfoForUpdate {
   user_query_collect_conf?: UserQueryCollectConf;
   /** workflow模式的编排信息 */
   layout_info?: LayoutInfo;
+  mcp_info_list?: Array<MCPInfo>;
   /** Bot的长期记忆类型 */
   time_capsule_type?: TimeCapsuleType;
   /** 新版长期记忆Bot的长期记忆用这个配置 */
@@ -1037,6 +1039,11 @@ export interface PluginInfo {
   api_name?: string;
   /** 区分插件来源，开源版本使用字段 */
   plugin_from?: PluginFrom;
+}
+
+export interface MCPInfo {
+  /** MCP Server ID; the first version enables all tools from the server */
+  mcp_server_id: string;
 }
 
 export interface PluginParameter {

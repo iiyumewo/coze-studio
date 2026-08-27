@@ -103,6 +103,14 @@ describe('useBotSkillStore', () => {
     expect(useBotSkillStore.getState().workflows).toMatchObject(skillWorkflows);
   });
 
+  it('updateSkillMCPServers', () => {
+    const mcpServers = [{ mcp_server_id: '200' }];
+
+    useBotSkillStore.getState().updateSkillMCPServers(mcpServers);
+
+    expect(useBotSkillStore.getState().mcpServers).toEqual(mcpServers);
+  });
+
   it('updateSkillKnowledgeDatasetList', () => {
     const skillKnowledgeDatasetList = [
       {
@@ -255,6 +263,7 @@ describe('useBotSkillStore', () => {
       bot_info: {
         plugin_info_list: [],
         workflow_info_list: [],
+        mcp_info_list: [{ mcp_server_id: '200' }],
         knowledge: {},
         task_info: {},
         variable_list: [],
@@ -281,6 +290,7 @@ describe('useBotSkillStore', () => {
     const defaultState = getDefaultBotSkillStore();
     expect(state.pluginApis).toEqual([]);
     expect(state.workflows).toEqual([]);
+    expect(state.mcpServers).toEqual([{ mcp_server_id: '200' }]);
     expect(state.knowledge).toEqual({
       dataSetInfo: {
         auto: false,

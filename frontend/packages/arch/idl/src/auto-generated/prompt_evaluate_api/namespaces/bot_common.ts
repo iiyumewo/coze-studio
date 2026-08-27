@@ -598,6 +598,7 @@ export interface BotInfo {
   /** workflow模式的编排信息 */
   layout_info?: LayoutInfo;
   business_type?: BusinessType;
+  mcp_info_list?: Array<MCPInfo>;
 }
 
 /** bot信息 for 更新 */
@@ -666,6 +667,7 @@ export interface BotInfoForUpdate {
   user_query_collect_conf?: UserQueryCollectConf;
   /** workflow模式的编排信息 */
   layout_info?: LayoutInfo;
+  mcp_info_list?: Array<MCPInfo>;
 }
 
 export interface BotTagInfo {
@@ -948,6 +950,11 @@ export interface PluginInfo {
   api_id?: string;
   /** api name O项目用 */
   api_name?: string;
+}
+
+export interface MCPInfo {
+  /** MCP Server ID; the first version enables all tools from the server */
+  mcp_server_id: string;
 }
 
 export interface PluginParameter {

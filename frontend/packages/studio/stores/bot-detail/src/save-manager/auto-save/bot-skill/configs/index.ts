@@ -26,6 +26,7 @@ import { taskInfoConfig } from './task-info';
 import { suggestionConfig } from './suggestion-config';
 import { pluginConfig } from './plugin';
 import { onboardingConfig } from './onboarding-content';
+import { mcpConfig } from './mcp';
 import { layoutInfoConfig } from './layout-info';
 import { knowledgeConfig } from './knowledge';
 import { chatBackgroundConfig } from './chat-background';
@@ -36,6 +37,7 @@ export const registers: HostedObserverConfig<
   ScopeStateType
 >[] = [
   pluginConfig,
+  mcpConfig,
   chatBackgroundConfig,
   onboardingConfig,
   knowledgeConfig,

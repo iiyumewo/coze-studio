@@ -348,6 +348,7 @@ func (p *primaryServices) toSingleAgentServiceComponents() *singleagent.ServiceC
 		WorkflowDomainSVC:    p.workflowSVC.DomainSVC,
 		VariablesDomainSVC:   p.memorySVC.VariablesDomainSVC,
 		ShortcutCMDDomainSVC: p.shortcutSVC.ShortCutDomainSVC,
+		MCPServerReader:      mcprepository.NewMCPServerRepo(p.basicServices.infra.DB, p.basicServices.infra.IDGenSVC),
 		CPStore:              checkpoint.NewRedisStore(p.infra.CacheCli),
 	}
 }

@@ -39,6 +39,7 @@ import (
 	crossuser "github.com/coze-dev/coze-studio/backend/crossdomain/user"
 	"github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/entity"
 	singleagent "github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/service"
+	mcpentity "github.com/coze-dev/coze-studio/backend/domain/mcp/entity"
 	variableEntity "github.com/coze-dev/coze-studio/backend/domain/memory/variables/entity"
 	searchEntity "github.com/coze-dev/coze-studio/backend/domain/search/entity"
 	shortcutEntity "github.com/coze-dev/coze-studio/backend/domain/shortcutcmd/entity"
@@ -104,6 +105,12 @@ func (s *SingleAgentApplicationService) UpdateSingleAgentDraft(ctx context.Conte
 
 	userID := ctxutil.MustGetUIDFromCtx(ctx)
 
+	if req.BotInfo.MCPInfoList != nil {
+		if err = s.validateMCPServers(ctx, currentAgentInfo.SpaceID, req.BotInfo.MCPInfoList); err != nil {
+			return nil, err
+		}
+	}
+
 	updateAgentInfo, err := s.applyAgentUpdates(currentAgentInfo, req.BotInfo)
 	if err != nil {
 		return nil, err
@@ -147,6 +154,52 @@ func (s *SingleAgentApplicationService) UpdateSingleAgentDraft(ctx context.Conte
 			Branch:       playground.BranchPtr(playground.Branch_PersonalDraft),
 		},
 	}, nil
+}
+
+func (s *SingleAgentApplicationService) validateMCPServers(ctx context.Context, spaceID int64, refs []*bot_common.MCPInfo) error {
+	serverIDs := make([]int64, 0, len(refs))
+	seen := make(map[int64]struct{}, len(refs))
+	for _, ref := range refs {
+		if ref == nil || ref.GetMCPServerID() <= 0 {
+			return errorx.New(errno.ErrMCPInvalidParamCode,
+				errorx.KV("msg", "mcp_server_id must be greater than zero"))
+		}
+
+		serverID := ref.GetMCPServerID()
+		if _, exists := seen[serverID]; exists {
+			return errorx.New(errno.ErrMCPInvalidParamCode,
+				errorx.KV("msg", fmt.Sprintf("duplicate mcp_server_id: %d", serverID)))
+		}
+		seen[serverID] = struct{}{}
+		serverIDs = append(serverIDs, serverID)
+	}
+
+	if len(serverIDs) == 0 {
+		return nil
+	}
+	if s.appContext.MCPServerReader == nil {
+		return errorx.WrapByCode(fmt.Errorf("MCP server reader is not initialized"), errno.ErrMCPGetCode)
+	}
+
+	for _, serverID := range serverIDs {
+		server, err := s.appContext.MCPServerReader.GetByID(ctx, serverID)
+		if err != nil {
+			return errorx.WrapByCode(err, errno.ErrMCPGetCode)
+		}
+		if server == nil {
+			return errorx.WrapByCode(fmt.Errorf("MCP server %d not found", serverID), errno.ErrMCPGetCode)
+		}
+		if server.SpaceID != spaceID {
+			return errorx.New(errno.ErrMCPPermissionCode,
+				errorx.KV("msg", fmt.Sprintf("no permission for MCP server %d", serverID)))
+		}
+		if server.Status != mcpentity.ServerStatusEnabled {
+			return errorx.New(errno.ErrMCPValidateCode,
+				errorx.KV("msg", fmt.Sprintf("MCP server %d is disabled", serverID)))
+		}
+	}
+
+	return nil
 }
 
 func (s *SingleAgentApplicationService) UpdatePromptDisable(ctx context.Context, req *table.UpdateDatabaseBotSwitchRequest) (*table.UpdateDatabaseBotSwitchResponse, error) {
@@ -342,6 +395,10 @@ func (s *SingleAgentApplicationService) applyAgentUpdates(target *entity.SingleA
 		target.Plugin = patch.PluginInfoList
 	}
 
+	if patch.MCPInfoList != nil {
+		target.MCP = patch.MCPInfoList
+	}
+
 	if patch.Knowledge != nil {
 		target.Knowledge = patch.Knowledge
 	}
@@ -418,6 +475,7 @@ func (s *SingleAgentApplicationService) singleAgentDraftDo2Vo(ctx context.Contex
 		ModelInfo:               do.ModelInfo,
 		PromptInfo:              do.Prompt,
 		PluginInfoList:          do.Plugin,
+		MCPInfoList:             do.MCP,
 		Knowledge:               do.Knowledge,
 		WorkflowInfoList:        do.Workflow,
 		SuggestReplyInfo:        do.SuggestReply,

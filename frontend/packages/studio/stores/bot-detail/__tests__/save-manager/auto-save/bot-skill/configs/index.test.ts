@@ -23,6 +23,7 @@ import { taskInfoConfig } from '../../../../../src/save-manager/auto-save/bot-sk
 import { suggestionConfig } from '../../../../../src/save-manager/auto-save/bot-skill/configs/suggestion-config';
 import { pluginConfig } from '../../../../../src/save-manager/auto-save/bot-skill/configs/plugin';
 import { onboardingConfig } from '../../../../../src/save-manager/auto-save/bot-skill/configs/onboarding-content';
+import { mcpConfig } from '../../../../../src/save-manager/auto-save/bot-skill/configs/mcp';
 import { layoutInfoConfig } from '../../../../../src/save-manager/auto-save/bot-skill/configs/layout-info';
 import { knowledgeConfig } from '../../../../../src/save-manager/auto-save/bot-skill/configs/knowledge';
 import { chatBackgroundConfig } from '../../../../../src/save-manager/auto-save/bot-skill/configs/chat-background';
@@ -99,6 +100,13 @@ vi.mock(
   }),
 );
 
+vi.mock(
+  '../../../../../src/save-manager/auto-save/bot-skill/configs/mcp',
+  () => ({
+    mcpConfig: { key: 'mcp', selector: vi.fn() },
+  }),
+);
+
 describe('bot-skill configs', () => {
   it('应该正确注册所有配置', () => {
     // Verify that the registers array contains all configurations
@@ -112,9 +120,10 @@ describe('bot-skill configs', () => {
     expect(registers).toContain(variablesConfig);
     expect(registers).toContain(workflowsConfig);
     expect(registers).toContain(voicesInfoConfig);
+    expect(registers).toContain(mcpConfig);
 
     // Verify the length of the registers array
-    expect(registers.length).toBe(10);
+    expect(registers.length).toBe(11);
   });
 
   it('每个配置都应该有 key 和 selector 属性', () => {
@@ -124,5 +133,17 @@ describe('bot-skill configs', () => {
       expect(typeof config.key).toBe('string');
       expect(typeof config.selector).toBe('function');
     });
+  });
+
+  it('应该把 MCP Server 引用转换为草稿保存字段', async () => {
+    const actualMCPModule = (await vi.importActual(
+      '../../../../../src/save-manager/auto-save/bot-skill/configs/mcp',
+    )) as { mcpConfig: typeof mcpConfig };
+    const mcpServers = [{ mcp_server_id: '200' }];
+
+    const payload =
+      await actualMCPModule.mcpConfig.middleware?.onBeforeSave?.(mcpServers);
+
+    expect(payload).toEqual({ mcp_info_list: mcpServers });
   });
 });

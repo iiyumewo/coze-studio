@@ -18,10 +18,10 @@ import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import { create } from 'zustand';
 import { isFunction } from 'lodash-es';
 import { produce } from 'immer';
-import { type ShortCutStruct } from '@coze-agent-ide/tool-config';
 import {
   type HookInfo,
   type LayoutInfo,
+  type MCPInfo,
   type BackgroundImageInfo,
   type GetDraftBotInfoAgwData,
 } from '@coze-arch/bot-api/playground_api';
@@ -30,6 +30,7 @@ import {
   FileboxInfoMode,
   type PluginApi,
 } from '@coze-arch/bot-api/developer_api';
+import { type ShortCutStruct } from '@coze-agent-ide/tool-config';
 import { botInputLengthService } from '@coze-agent-ide/bot-input-length-limit';
 
 import {
@@ -68,6 +69,7 @@ import {
 export const getDefaultBotSkillStore = (): BotSkillStore => ({
   pluginApis: [],
   workflows: [],
+  mcpServers: [],
   knowledge: {
     dataSetList: [],
     dataSetInfo: DEFAULT_KNOWLEDGE_CONFIG(),
@@ -103,6 +105,8 @@ export interface BotSkillStore {
   pluginApis: EnabledPluginApi[];
   /** Selected workflow */
   workflows: WorkFlowItemType[];
+  /** Selected MCP servers */
+  mcpServers: MCPInfo[];
   /** Knowledge Allocation */
   knowledge: KnowledgeConfig;
   // endregion
@@ -158,6 +162,7 @@ export interface BotSkillAction {
   setBotSkillByImmer: (update: (state: BotSkillStore) => void) => void;
   updateSkillPluginApis: (pluginApis: PluginApi[]) => void;
   updateSkillWorkflows: (workflows: WorkFlowItemType[]) => void;
+  updateSkillMCPServers: (mcpServers: MCPInfo[]) => void;
   updateSkillKnowledgeDatasetList: (
     dataSetList: KnowledgeConfig['dataSetList'],
   ) => void;
@@ -197,6 +202,7 @@ export const useBotSkillStore = create<BotSkillStore & BotSkillAction>()(
         }));
       },
       updateSkillWorkflows: workflows => set(s => ({ ...s, workflows })),
+      updateSkillMCPServers: mcpServers => set(s => ({ ...s, mcpServers })),
       updateSkillKnowledgeDatasetList: dataSetList =>
         set(
           produce<BotSkillStore>(s => {
@@ -272,6 +278,7 @@ export const useBotSkillStore = create<BotSkillStore & BotSkillAction>()(
             botInfo?.workflow_info_list,
             optionData?.workflow_detail_map,
           ),
+          mcpServers: botInfo?.mcp_info_list ?? [],
           knowledge: transformDto2Vo.knowledge(
             botInfo?.knowledge,
             optionData?.knowledge_detail_map,

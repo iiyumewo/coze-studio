@@ -58,6 +58,7 @@ func newSingleAgentDraft(db *gorm.DB, opts ...gen.DOOption) singleAgentDraft {
 	_singleAgentDraft.OnboardingInfo = field.NewField(tableName, "onboarding_info")
 	_singleAgentDraft.Prompt = field.NewField(tableName, "prompt")
 	_singleAgentDraft.Plugin = field.NewField(tableName, "plugin")
+	_singleAgentDraft.MCP = field.NewField(tableName, "mcp")
 	_singleAgentDraft.Knowledge = field.NewField(tableName, "knowledge")
 	_singleAgentDraft.Workflow = field.NewField(tableName, "workflow")
 	_singleAgentDraft.SuggestReply = field.NewField(tableName, "suggest_reply")
@@ -93,6 +94,7 @@ type singleAgentDraft struct {
 	OnboardingInfo          field.Field  // Onboarding Information
 	Prompt                  field.Field  // Agent Prompt Configuration
 	Plugin                  field.Field  // Agent Plugin Base Configuration
+	MCP                     field.Field  // Agent MCP Server Configuration
 	Knowledge               field.Field  // Agent Knowledge Base Configuration
 	Workflow                field.Field  // Agent Workflow Configuration
 	SuggestReply            field.Field  // Suggested Replies
@@ -133,6 +135,7 @@ func (s *singleAgentDraft) updateTableName(table string) *singleAgentDraft {
 	s.OnboardingInfo = field.NewField(table, "onboarding_info")
 	s.Prompt = field.NewField(table, "prompt")
 	s.Plugin = field.NewField(table, "plugin")
+	s.MCP = field.NewField(table, "mcp")
 	s.Knowledge = field.NewField(table, "knowledge")
 	s.Workflow = field.NewField(table, "workflow")
 	s.SuggestReply = field.NewField(table, "suggest_reply")
@@ -158,7 +161,7 @@ func (s *singleAgentDraft) GetFieldByName(fieldName string) (field.OrderExpr, bo
 }
 
 func (s *singleAgentDraft) fillFieldMap() {
-	s.fieldMap = make(map[string]field.Expr, 24)
+	s.fieldMap = make(map[string]field.Expr, 25)
 	s.fieldMap["id"] = s.ID
 	s.fieldMap["agent_id"] = s.AgentID
 	s.fieldMap["creator_id"] = s.CreatorID
@@ -174,6 +177,7 @@ func (s *singleAgentDraft) fillFieldMap() {
 	s.fieldMap["onboarding_info"] = s.OnboardingInfo
 	s.fieldMap["prompt"] = s.Prompt
 	s.fieldMap["plugin"] = s.Plugin
+	s.fieldMap["mcp"] = s.MCP
 	s.fieldMap["knowledge"] = s.Knowledge
 	s.fieldMap["workflow"] = s.Workflow
 	s.fieldMap["suggest_reply"] = s.SuggestReply
