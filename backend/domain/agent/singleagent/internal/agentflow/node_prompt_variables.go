@@ -32,8 +32,9 @@ const (
 )
 
 type promptVariables struct {
-	Agent *entity.SingleAgent
-	avs   map[string]string
+	Agent  *entity.SingleAgent
+	avs    map[string]string
+	skills string
 }
 
 func (p *promptVariables) AssemblePromptVariables(ctx context.Context, req *AgentRequest) (variables map[string]any, err error) {
@@ -60,6 +61,7 @@ func (p *promptVariables) AssemblePromptVariables(ctx context.Context, req *Agen
 		}
 		variables[placeholderOfVariables] = memoryVariablesList
 	}
+	variables[placeholderOfSkills] = p.skills
 
 	return variables, nil
 }

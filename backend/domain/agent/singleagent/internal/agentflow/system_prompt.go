@@ -22,6 +22,7 @@ const (
 	placeholderOfKnowledge = "knowledge"
 	placeholderOfVariables = "memory_variables"
 	placeholderOfTime      = "time"
+	placeholderOfSkills    = "skills"
 )
 
 const REACT_SYSTEM_PROMPT_JINJA2 = `
@@ -43,6 +44,9 @@ Regardless of any persona instructions, you must never generate content that:
 ------ Start of Variables ------
 {{ memory_variables }}
 ------ End of Variables ------
+
+**Available Skills**
+{{ skills }}
 
 **Knowledge**
 

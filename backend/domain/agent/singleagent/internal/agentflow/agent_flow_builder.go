@@ -30,6 +30,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/bizpkg/llm/modelbuilder"
 	"github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow"
+	"github.com/coze-dev/coze-studio/backend/infra/skill"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/slices"
 )
 
@@ -75,9 +76,15 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 		}
 	}
 
+	skillCatalog, err := skill.LoadCatalog(skill.DefaultRoot())
+	if err != nil {
+		return nil, fmt.Errorf("load local skills: %w", err)
+	}
+
 	promptVars := &promptVariables{
-		Agent: conf.Agent,
-		avs:   avs,
+		Agent:  conf.Agent,
+		avs:    avs,
+		skills: skillCatalog.PromptDescription(),
 	}
 
 	personaVars := &personaRender{
@@ -117,6 +124,13 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 	if err != nil {
 		return nil, err
 	}
+	skillTools, err := newSkillTools(ctx, &skillToolConfig{
+		catalog:        skillCatalog,
+		conversationID: conf.ConversationID,
+	})
+	if err != nil {
+		return nil, err
+	}
 	tr := newPreToolRetriever(&toolPreCallConf{})
 
 	wfTools, returnDirectlyTools, err := newWorkflowTools(ctx, &workflowConfig{
@@ -151,11 +165,14 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 	if len(wfTools) > 0 {
 		containWfTool = true
 	}
-	agentTools := make([]tool.BaseTool, 0, len(pluginTools)+len(mcpTools)+len(wfTools)+len(dbTools)+len(avTools))
+	agentTools := make([]tool.BaseTool, 0, len(pluginTools)+len(mcpTools)+len(skillTools)+len(wfTools)+len(dbTools)+len(avTools))
 	agentTools = append(agentTools, slices.Transform(pluginTools, func(a tool.InvokableTool) tool.BaseTool {
 		return a
 	})...)
 	agentTools = append(agentTools, slices.Transform(mcpTools, func(a tool.InvokableTool) tool.BaseTool {
+		return a
+	})...)
+	agentTools = append(agentTools, slices.Transform(skillTools, func(a tool.InvokableTool) tool.BaseTool {
 		return a
 	})...)
 	agentTools = append(agentTools, slices.Transform(wfTools, func(a workflow.ToolFromWorkflow) tool.BaseTool { return a.(tool.BaseTool) })...)
@@ -166,7 +183,7 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 	agentTools = append(agentTools, slices.Transform(avTools, func(a tool.InvokableTool) tool.BaseTool {
 		return a
 	})...)
-	if len(mcpTools) > 0 {
+	if len(mcpTools) > 0 || len(skillTools) > 0 {
 		if err = validateUniqueToolNames(ctx, agentTools); err != nil {
 			return nil, err
 		}
