@@ -39,7 +39,8 @@ func (s *SkillApplicationService) CreateSkill(ctx context.Context, spaceID int64
 	}
 	metadata, err := validateSkillArchive(fileName, data)
 	if err != nil {
-		return nil, errorx.WrapByCode(err, errno.ErrSkillValidateCode)
+		return nil, errorx.WrapByCode(err, errno.ErrSkillValidateCode,
+			errorx.KV("msg", errorx.ErrorWithoutStack(err)))
 	}
 	if s.storage == nil || s.fileSVC == nil {
 		return nil, errorx.New(errno.ErrSkillCreateCode, errorx.KV("msg", "skill storage is not initialized"))
