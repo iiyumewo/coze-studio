@@ -27,6 +27,7 @@ import {
 import { skillApi } from '@coze-arch/bot-api';
 
 import { SkillLibraryItem } from '../../skill/skill-library-item';
+import { SkillDetailModal } from '../../skill/skill-detail-modal';
 import { CreateSkillModal } from '../../skill/create-skill-modal';
 import { type UseEntityConfigHook } from './types';
 
@@ -38,18 +39,35 @@ export const useSkillConfig: UseEntityConfigHook = ({
   getCommonActions,
 }) => {
   const [visible, setVisible] = useState(false);
+  const [selectedSkill, setSelectedSkill] = useState<{
+    spaceId: string;
+    resourceInfo: ResourceInfo;
+  }>();
+
+  const detailVisible = selectedSkill?.spaceId === spaceId;
 
   return {
-    modals: visible ? (
-      <CreateSkillModal
-        spaceId={spaceId}
-        onCancel={() => setVisible(false)}
-        onSuccess={() => {
-          setVisible(false);
-          reloadList();
-        }}
-      />
-    ) : null,
+    modals: (
+      <>
+        {visible ? (
+          <CreateSkillModal
+            spaceId={spaceId}
+            onCancel={() => setVisible(false)}
+            onSuccess={() => {
+              setVisible(false);
+              reloadList();
+            }}
+          />
+        ) : null}
+        {detailVisible ? (
+          <SkillDetailModal
+            key={`${selectedSkill.spaceId}-${selectedSkill.resourceInfo.res_id}`}
+            resourceInfo={selectedSkill.resourceInfo}
+            onCancel={() => setSelectedSkill(undefined)}
+          />
+        ) : null}
+      </>
+    ),
     config: {
       typeFilter: {
         label: I18n.t('library_resource_type_skill'),
@@ -65,7 +83,12 @@ export const useSkillConfig: UseEntityConfigHook = ({
         </Menu.Item>
       ),
       target: [ResType.Skill],
-      onItemClick: () => undefined,
+      onItemClick: item => {
+        if (!item.res_id) {
+          return;
+        }
+        setSelectedSkill({ spaceId, resourceInfo: item });
+      },
       renderItem: item => <SkillLibraryItem resourceInfo={item} />,
       renderActions: (item: ResourceInfo) => {
         const deleteDisabled =
@@ -83,6 +106,11 @@ export const useSkillConfig: UseEntityConfigHook = ({
                   return;
                 }
                 await skillApi.deleteSkill(item.res_id, spaceId);
+                setSelectedSkill(current =>
+                  current?.resourceInfo.res_id === item.res_id
+                    ? undefined
+                    : current,
+                );
                 reloadList();
                 Toast.success(I18n.t('library_skill_delete_success'));
               },

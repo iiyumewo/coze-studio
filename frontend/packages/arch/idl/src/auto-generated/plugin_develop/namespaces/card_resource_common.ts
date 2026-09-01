@@ -124,6 +124,7 @@ export enum ResType {
   Variable = 8,
   Voice = 9,
   MCP = 10,
+  Skill = 11,
 }
 
 export enum SyncOperation {
