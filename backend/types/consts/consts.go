@@ -91,6 +91,16 @@ const (
 	CodeRunnerTimeoutSeconds = "CODE_RUNNER_TIMEOUT_SECONDS"
 	CodeRunnerMemoryLimitMB  = "CODE_RUNNER_MEMORY_LIMIT_MB"
 
+	SkillRunnerType            = "COZE_SKILL_RUNNER_TYPE"
+	SkillRunnerWorkspaceRoot   = "COZE_SKILL_RUNNER_WORKSPACE_ROOT"
+	SkillRunnerTimeoutSeconds  = "COZE_SKILL_RUNNER_TIMEOUT_SECONDS"
+	SkillRunnerMaxOutputBytes  = "COZE_SKILL_RUNNER_MAX_OUTPUT_BYTES"
+	SkillRunnerDockerBinary    = "COZE_SKILL_RUNNER_DOCKER_BINARY"
+	SkillRunnerDockerImage     = "COZE_SKILL_RUNNER_DOCKER_IMAGE"
+	SkillRunnerDockerMemoryMB  = "COZE_SKILL_RUNNER_DOCKER_MEMORY_MB"
+	SkillRunnerDockerCPUs      = "COZE_SKILL_RUNNER_DOCKER_CPUS"
+	SkillRunnerDockerPidsLimit = "COZE_SKILL_RUNNER_DOCKER_PIDS_LIMIT"
+
 	UseSSL      = "USE_SSL"
 	SSLCertFile = "SSL_CERT_FILE"
 	SSLKeyFile  = "SSL_KEY_FILE"

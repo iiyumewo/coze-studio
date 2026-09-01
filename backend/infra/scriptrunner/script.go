@@ -24,6 +24,12 @@ type Config struct {
 	PythonPath     string
 	TimeoutSeconds int
 	MaxOutputBytes int
+
+	DockerBinary        string
+	DockerImage         string
+	DockerMemoryLimitMB int64
+	DockerCPUs          float64
+	DockerPidsLimit     int64
 }
 
 type RunRequest struct {

@@ -25,7 +25,7 @@ import (
 	"github.com/cloudwego/eino/components/tool/utils"
 
 	"github.com/coze-dev/coze-studio/backend/infra/scriptrunner"
-	localrunner "github.com/coze-dev/coze-studio/backend/infra/scriptrunner/impl/local"
+	runnerimpl "github.com/coze-dev/coze-studio/backend/infra/scriptrunner/impl"
 	"github.com/coze-dev/coze-studio/backend/infra/skill"
 )
 
@@ -43,7 +43,7 @@ func newSkillTools(_ context.Context, conf *skillToolConfig) ([]tool.InvokableTo
 	runner := conf.runner
 	if runner == nil {
 		var err error
-		runner, err = localrunner.NewRunner(scriptrunner.Config{SkillsRoot: conf.catalog.Root()})
+		runner, err = runnerimpl.NewFromEnv(conf.catalog.Root())
 		if err != nil {
 			return nil, fmt.Errorf("create skill script runner: %w", err)
 		}
