@@ -36,6 +36,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/application/search"
 	"github.com/coze-dev/coze-studio/backend/application/shortcutcmd"
 	"github.com/coze-dev/coze-studio/backend/application/singleagent"
+	skillapplication "github.com/coze-dev/coze-studio/backend/application/skill"
 	"github.com/coze-dev/coze-studio/backend/application/template"
 	"github.com/coze-dev/coze-studio/backend/application/upload"
 	"github.com/coze-dev/coze-studio/backend/application/user"
@@ -101,6 +102,7 @@ type basicServices struct {
 	openAuthSVC  *openauth.OpenAuthApplicationService
 	uploadSVC    *upload.UploadService
 	mcpSVC       *mcp.MCPApplicationService
+	skillSVC     *skillapplication.SkillApplicationService
 
 	permissionSVC *permission.PermissionApplicationService
 }
@@ -190,6 +192,7 @@ func initBasicServices(ctx context.Context, infra *appinfra.AppDependencies, e *
 	uploadSVC := upload.InitService(&upload.UploadComponents{Cache: infra.CacheCli, Oss: infra.OSS, DB: infra.DB, Idgen: infra.IDGenSVC})
 	openAuthSVC := openauth.InitService(infra.DB, infra.IDGenSVC)
 	mcpSVC := mcp.InitService(infra.DB, infra.IDGenSVC, e.resourceEventBus)
+	skillSVC := skillapplication.InitService(infra.DB, infra.IDGenSVC, infra.OSS, uploadSVC.UploadSVC, e.resourceEventBus)
 	promptSVC := prompt.InitService(infra.DB, infra.IDGenSVC, e.resourceEventBus)
 	modelMgrSVC := modelmgr.InitService(infra.OSS)
 	connectorSVC := connector.InitService(infra.OSS)
@@ -213,6 +216,7 @@ func initBasicServices(ctx context.Context, infra *appinfra.AppDependencies, e *
 		openAuthSVC:  openAuthSVC,
 		uploadSVC:    uploadSVC,
 		mcpSVC:       mcpSVC,
+		skillSVC:     skillSVC,
 
 		permissionSVC: permissionSVC,
 	}, nil
@@ -377,6 +381,7 @@ func (p *primaryServices) toSearchServiceComponents(singleAgentSVC *singleagent.
 		PromptDomainSVC:      p.basicServices.promptSVC.DomainSVC,
 		DatabaseDomainSVC:    p.memorySVC.DatabaseDomainSVC,
 		MCPServerReader:      mcprepository.NewMCPServerRepo(infra.DB, infra.IDGenSVC),
+		SkillReader:          p.basicServices.skillSVC,
 	}
 }
 

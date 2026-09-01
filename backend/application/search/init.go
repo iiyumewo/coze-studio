@@ -32,6 +32,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/domain/plugin/service"
 	prompt "github.com/coze-dev/coze-studio/backend/domain/prompt/service"
 	search "github.com/coze-dev/coze-studio/backend/domain/search/service"
+	skillentity "github.com/coze-dev/coze-studio/backend/domain/skill/entity"
 	user "github.com/coze-dev/coze-studio/backend/domain/user/service"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow"
 	"github.com/coze-dev/coze-studio/backend/infra/cache"
@@ -59,10 +60,15 @@ type ServiceComponents struct {
 	PromptDomainSVC      prompt.Prompt
 	DatabaseDomainSVC    database.Database
 	MCPServerReader      MCPServerReader
+	SkillReader          SkillReader
 }
 
 type MCPServerReader interface {
 	GetByID(ctx context.Context, id int64) (*mcpentity.MCPServer, error)
+}
+
+type SkillReader interface {
+	GetByID(ctx context.Context, id int64) (*skillentity.Skill, error)
 }
 
 func InitService(ctx context.Context, s *ServiceComponents) (*SearchApplicationService, error) {

@@ -95,3 +95,13 @@ func (u *uploadSVC) GetFile(ctx context.Context, req *GetFileRequest) (resp *Get
 	}
 	return
 }
+
+func (u *uploadSVC) DeleteFile(ctx context.Context, req *DeleteFileRequest) error {
+	if req == nil || req.ID <= 0 {
+		return errorx.New(errno.ErrUploadInvalidParamCode, errorx.KV("msg", "file id is invalid"))
+	}
+	if err := u.fileRepo.Delete(ctx, req.ID); err != nil {
+		return errorx.WrapByCode(err, errno.ErrUploadSystemErrorCode)
+	}
+	return nil
+}

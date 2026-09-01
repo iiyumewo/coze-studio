@@ -70,6 +70,8 @@ func NewResourcePacker(resID int64, t common.ResType, appContext *ServiceCompone
 		return &databasePacker{resourceBasePacker: base}, nil
 	case common.ResType_MCP:
 		return &mcpPacker{resourceBasePacker: base}, nil
+	case common.ResType_Skill:
+		return &skillPacker{resourceBasePacker: base}, nil
 	}
 
 	return nil, fmt.Errorf("unsupported resource type: %s , resID: %d", t, resID)
@@ -411,4 +413,34 @@ func (m *mcpPacker) GetActions(context.Context) []*common.ResourceAction {
 			Enable: true,
 		},
 	}
+}
+
+type skillPacker struct {
+	resourceBasePacker
+}
+
+func (s *skillPacker) GetDataInfo(ctx context.Context) (*dataInfo, error) {
+	skill, err := s.appContext.SkillReader.GetByID(ctx, s.resID)
+	if err != nil {
+		return nil, err
+	}
+	if skill == nil {
+		return nil, fmt.Errorf("Skill not found, id: %d", s.resID)
+	}
+
+	return &dataInfo{
+		desc: ptr.Of(skill.Description),
+		bizExtend: map[string]string{
+			"file_name":   skill.FileName,
+			"file_size":   strconv.FormatInt(skill.FileSize, 10),
+			"entry_count": strconv.Itoa(int(skill.EntryCount)),
+		},
+	}, nil
+}
+
+func (s *skillPacker) GetActions(context.Context) []*common.ResourceAction {
+	return []*common.ResourceAction{{
+		Key:    common.ActionKey_Delete,
+		Enable: true,
+	}}
 }

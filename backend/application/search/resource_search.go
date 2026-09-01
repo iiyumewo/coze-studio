@@ -51,6 +51,7 @@ var resType2iconURI = map[common.ResType]string{
 	common.ResType_Knowledge: consts.DefaultDatasetIcon,
 	common.ResType_Prompt:    consts.DefaultPromptIcon,
 	common.ResType_Database:  consts.DefaultDatabaseIcon,
+	common.ResType_Skill:     consts.DefaultPluginIcon,
 	// ResType_UI:        consts.DefaultWorkflowIcon,
 	// ResType_Voice:     consts.DefaultPluginIcon,
 	// ResType_Imageflow: consts.DefaultPluginIcon,

@@ -210,6 +210,8 @@ func Register(r *server.Hertz) {
 				}
 			}
 		}
+		_api.POST("/skill_manage/v1/skills", coze.CreateSkill)
+		_api.DELETE("/skill_manage/v1/skills/:skill_id", coze.DeleteSkill)
 		{
 			_memory := _api.Group("/memory", _memoryMw()...)
 			_memory.GET("/doc_table_info", append(_getdocumenttableinfoMw(), coze.GetDocumentTableInfo)...)

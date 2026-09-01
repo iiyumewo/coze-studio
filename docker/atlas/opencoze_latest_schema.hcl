@@ -2252,6 +2252,98 @@ table "mcp_server" {
     columns = [column.creator_id]
   }
 }
+table "skill" {
+  schema  = schema.opencoze
+  comment = "Workspace Skill resource"
+  column "id" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Skill ID"
+  }
+  column "space_id" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Space ID"
+  }
+  column "creator_id" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Creator User ID"
+  }
+  column "name" {
+    null    = false
+    type    = varchar(128)
+    default = ""
+    comment = "Skill name from SKILL.md"
+  }
+  column "description" {
+    null    = false
+    type    = varchar(2000)
+    default = ""
+    comment = "Skill description from SKILL.md"
+  }
+  column "file_id" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Uploaded archive file ID"
+  }
+  column "file_name" {
+    null    = false
+    type    = varchar(255)
+    default = ""
+    comment = "Uploaded archive name"
+  }
+  column "file_size" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Uploaded archive size"
+  }
+  column "entry_count" {
+    null     = false
+    type     = int
+    default  = 0
+    unsigned = true
+    comment  = "Archive entry count"
+  }
+  column "created_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Create Time in Milliseconds"
+  }
+  column "updated_at" {
+    null     = false
+    type     = bigint
+    default  = 0
+    unsigned = true
+    comment  = "Update Time in Milliseconds"
+  }
+  column "deleted_at" {
+    null    = true
+    type    = datetime(3)
+    comment = "Delete Time"
+  }
+  primary_key {
+    columns = [column.id]
+  }
+  index "idx_skill_space_updated_at" {
+    columns = [column.space_id, column.updated_at]
+  }
+  index "idx_skill_creator_id" {
+    columns = [column.creator_id]
+  }
+}
 table "model_meta" {
   schema  = schema.opencoze
   comment = "Model metadata"
