@@ -24,6 +24,7 @@ import {
   usePromptConfig,
   useKnowledgeConfig,
   useMcpConfig,
+  useSkillConfig,
 } from '@coze-studio/workspace-base/library';
 
 export const LibraryPage: FC<{ spaceId: string }> = ({ spaceId }) => {
@@ -46,6 +47,8 @@ export const LibraryPage: FC<{ spaceId: string }> = ({ spaceId }) => {
     useDatabaseConfig(configCommonParams);
   const { config: mcpConfig, modals: mcpModals } =
     useMcpConfig(configCommonParams);
+  const { config: skillConfig, modals: skillModals } =
+    useSkillConfig(configCommonParams);
 
   return (
     <>
@@ -59,6 +62,7 @@ export const LibraryPage: FC<{ spaceId: string }> = ({ spaceId }) => {
           promptConfig,
           databaseConfig,
           mcpConfig,
+          skillConfig,
         ]}
       />
       {pluginModals}
@@ -67,6 +71,7 @@ export const LibraryPage: FC<{ spaceId: string }> = ({ spaceId }) => {
       {databaseModals}
       {knowledgeModals}
       {mcpModals}
+      {skillModals}
     </>
   );
 };

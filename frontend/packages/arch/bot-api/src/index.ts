@@ -93,3 +93,9 @@ export {
   type TestAndCreateMcpServerRequest,
   type TestAndCreateMcpServerResponse,
 } from './mcp-api';
+export {
+  skillApi,
+  type CreateSkillResponse,
+  type DeleteSkillResponse,
+  type SkillData,
+} from './skill-api';

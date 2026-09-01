@@ -58,6 +58,7 @@ export { useWorkflowConfig } from './hooks/use-entity-configs/use-workflow-confi
 export { usePromptConfig } from './hooks/use-entity-configs/use-prompt-config';
 export { useKnowledgeConfig } from './hooks/use-entity-configs/use-knowledge-config';
 export { useMcpConfig } from './hooks/use-entity-configs/use-mcp-config';
+export { useSkillConfig } from './hooks/use-entity-configs/use-skill-config';
 export { type LibraryEntityConfig } from './types';
 export { type UseEntityConfigHook } from './hooks/use-entity-configs/types';
 export { BaseLibraryItem } from './components/base-library-item';

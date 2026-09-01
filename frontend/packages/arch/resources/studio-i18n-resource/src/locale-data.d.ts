@@ -574,6 +574,7 @@ export interface I18nOptionsMap {
   'language_understanding_leaderboard_top_n_explain': { n: ReactNode /* string */ };
   'last_modified_time': { time: ReactNode /* string */ };
   'library_mcp_create_success': { tool_count: ReactNode /* string */ };
+  'library_skill_files': { count: ReactNode /* number */ };
   'limits_dataset_files': { number_of_files: ReactNode /* string */ };
   'lite_version_tips': { doclink: ReactNode /* string */ };
   'location_not_parsed': { location: ReactNode /* string */ };
@@ -9837,6 +9838,17 @@ export type I18nKeysNoOptionsType =
   | 'library_mcp_validation_failed'
   | 'library_mcp_validation_status'
   | 'library_mcp_validation_success'
+  | 'library_skill_choose_file'
+  | 'library_skill_create_success'
+  | 'library_skill_create_title'
+  | 'library_skill_delete_desc'
+  | 'library_skill_delete_success'
+  | 'library_skill_file_hint'
+  | 'library_skill_file_label'
+  | 'library_skill_file_required'
+  | 'library_skill_invalid_file'
+  | 'library_skill_upload'
+  | 'library_skill_upload_failed'
   | 'library_name'
   | 'library_resource'
   | 'library_resource_detail_back'
@@ -9845,6 +9857,7 @@ export type I18nKeysNoOptionsType =
   | 'library_resource_type_mcp'
   | 'library_resource_type_plugin'
   | 'library_resource_type_prompt'
+  | 'library_resource_type_skill'
   | 'library_resource_type_ui'
   | 'library_resource_type_workflow'
   | 'library_type'
