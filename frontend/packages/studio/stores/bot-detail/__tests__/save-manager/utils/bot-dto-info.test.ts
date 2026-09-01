@@ -81,6 +81,8 @@ describe('bot-dto-info utils', () => {
     suggestionConfig: { value: 'suggestionConfig' },
     onboardingContent: { value: 'onboardingContent' },
     pluginApis: { value: 'pluginApis' },
+    mcpServers: { value: 'mcpServers' },
+    skills: { value: 'skills' },
     backgroundImageInfoList: { value: 'backgroundImageInfoList' },
     shortcut: { value: 'shortcut' },
     tts: { value: 'tts' },
@@ -98,6 +100,8 @@ describe('bot-dto-info utils', () => {
     suggestionConfig: vi.fn(data => ({ suggestionConfig: data })),
     onboarding: vi.fn(data => ({ onboarding: data })),
     plugin: vi.fn(data => ({ plugin: data })),
+    mcp: vi.fn(data => ({ mcp: data })),
+    skill: vi.fn(data => ({ skill: data })),
     shortcut: vi.fn(data => ({ shortcut: data })),
     tts: vi.fn(data => ({ tts: data })),
     timeCapsule: vi.fn(data => ({ timeCapsule: data })),
@@ -189,6 +193,10 @@ describe('bot-dto-info utils', () => {
     expect(mockTransformVo2Dto.plugin).toHaveBeenCalledWith(
       mockBotSkill.pluginApis,
     );
+    expect(mockTransformVo2Dto.mcp).toHaveBeenCalledWith(
+      mockBotSkill.mcpServers,
+    );
+    expect(mockTransformVo2Dto.skill).toHaveBeenCalledWith(mockBotSkill.skills);
     expect(mockTransformVo2Dto.shortcut).toHaveBeenCalledWith(
       mockBotSkill.shortcut,
     );

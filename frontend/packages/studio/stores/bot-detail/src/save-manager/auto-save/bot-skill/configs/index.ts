@@ -24,6 +24,7 @@ import { voicesInfoConfig } from './voices-info';
 import { variablesConfig } from './variables';
 import { taskInfoConfig } from './task-info';
 import { suggestionConfig } from './suggestion-config';
+import { skillConfig } from './skill';
 import { pluginConfig } from './plugin';
 import { onboardingConfig } from './onboarding-content';
 import { mcpConfig } from './mcp';
@@ -38,6 +39,7 @@ export const registers: HostedObserverConfig<
 >[] = [
   pluginConfig,
   mcpConfig,
+  skillConfig,
   chatBackgroundConfig,
   onboardingConfig,
   knowledgeConfig,

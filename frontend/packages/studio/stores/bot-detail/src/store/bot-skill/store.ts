@@ -52,6 +52,7 @@ import {
   type VariableItem,
   type WorkFlowItemType,
   type MCPServerItem,
+  type SkillItem,
 } from '../../types/skill';
 import { transformDto2Vo, transformVo2Dto } from './transform';
 import {
@@ -70,6 +71,7 @@ export const getDefaultBotSkillStore = (): BotSkillStore => ({
   pluginApis: [],
   workflows: [],
   mcpServers: [],
+  skills: [],
   knowledge: {
     dataSetList: [],
     dataSetInfo: DEFAULT_KNOWLEDGE_CONFIG(),
@@ -107,6 +109,8 @@ export interface BotSkillStore {
   workflows: WorkFlowItemType[];
   /** Selected MCP servers */
   mcpServers: MCPServerItem[];
+  /** Selected Skills */
+  skills: SkillItem[];
   /** Knowledge Allocation */
   knowledge: KnowledgeConfig;
   // endregion
@@ -163,6 +167,7 @@ export interface BotSkillAction {
   updateSkillPluginApis: (pluginApis: PluginApi[]) => void;
   updateSkillWorkflows: (workflows: WorkFlowItemType[]) => void;
   updateSkillMCPServers: (mcpServers: MCPServerItem[]) => void;
+  updateSkillSkills: (skills: SkillItem[]) => void;
   updateSkillKnowledgeDatasetList: (
     dataSetList: KnowledgeConfig['dataSetList'],
   ) => void;
@@ -203,6 +208,7 @@ export const useBotSkillStore = create<BotSkillStore & BotSkillAction>()(
       },
       updateSkillWorkflows: workflows => set(s => ({ ...s, workflows })),
       updateSkillMCPServers: mcpServers => set(s => ({ ...s, mcpServers })),
+      updateSkillSkills: skills => set(s => ({ ...s, skills })),
       updateSkillKnowledgeDatasetList: dataSetList =>
         set(
           produce<BotSkillStore>(s => {
@@ -282,6 +288,7 @@ export const useBotSkillStore = create<BotSkillStore & BotSkillAction>()(
             botInfo?.mcp_info_list,
             optionData?.mcp_server_detail_map,
           ),
+          skills: transformDto2Vo.skill(botInfo?.skill_info_list),
           knowledge: transformDto2Vo.knowledge(
             botInfo?.knowledge,
             optionData?.knowledge_detail_map,

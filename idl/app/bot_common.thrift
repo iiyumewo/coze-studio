@@ -111,6 +111,10 @@ struct MCPInfo {
     1: required i64 MCPServerID (agw.js_conv="str", api.js_conv="true", api.body="mcp_server_id"), // MCP Server ID; the first version enables all tools from the server
 }
 
+struct SkillInfo {
+    1: required i64 SkillID (agw.js_conv="str", api.js_conv="true", api.body="skill_id"), // Skill ID
+}
+
 struct WorkflowInfo {
     1: optional i64 WorkflowId (agw.js_conv="str", api.js_conv="true", api.body="workflow_id"), // WorkflowId
     2: optional i64 PluginId   (agw.js_conv="str", api.js_conv="true", api.body="plugin_id")  , // Plugin ID
@@ -491,6 +495,7 @@ struct BotInfo {
     34: LayoutInfo         LayoutInfo       (api.body="layout_info")                                        , // Orchestration information for workflow patterns
     35: BusinessType       BusinessType     (api.body="business_type")
     36: list<MCPInfo>      MCPInfoList      (api.body="mcp_info_list")                                      , // List of MCP Servers enabled for the bot
+    37: list<SkillInfo>    SkillInfoList    (api.body="skill_info_list")                                    , // List of Skills enabled for the bot
 }
 
 
@@ -656,6 +661,7 @@ struct BotInfoForUpdate {
     32: optional UserQueryCollectConf     UserQueryCollectConf (api.body="user_query_collect_conf")// User query collection configuration
     33: optional LayoutInfo               LayoutInfo(api.body="layout_info")                           // Orchestration information for workflow patterns
     34: optional list<MCPInfo>            MCPInfoList (api.body="mcp_info_list")                     // List of MCP Servers enabled for the bot
+    35: optional list<SkillInfo>           SkillInfoList (api.body="skill_info_list")                 // List of Skills enabled for the bot
 }
 
 struct AgentForUpdate {

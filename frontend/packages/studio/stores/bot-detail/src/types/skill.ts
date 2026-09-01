@@ -29,6 +29,7 @@ import {
   type DefaultUserInputType,
   type PluginFrom,
   type MCPInfo,
+  type SkillInfo,
 } from '@coze-arch/bot-api/playground_api';
 import { type BotTableRWMode, type FieldItem } from '@coze-arch/bot-api/memory';
 import { type Dataset } from '@coze-arch/bot-api/knowledge';
@@ -59,6 +60,12 @@ export interface MCPServerItem extends MCPInfo {
   name?: string;
   tool_count?: number;
   status?: number;
+}
+
+export interface SkillItem extends SkillInfo {
+  name?: string;
+  description?: string;
+  entry_count?: number;
 }
 
 export interface BotDetailSkill {

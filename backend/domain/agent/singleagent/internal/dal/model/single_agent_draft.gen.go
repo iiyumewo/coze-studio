@@ -45,6 +45,7 @@ type SingleAgentDraft struct {
 	Prompt                  *bot_common.PromptInfo            `gorm:"column:prompt;comment:Agent Prompt Configuration;serializer:json" json:"prompt"`                               // Agent Prompt Configuration
 	Plugin                  []*bot_common.PluginInfo          `gorm:"column:plugin;comment:Agent Plugin Base Configuration;serializer:json" json:"plugin"`                          // Agent Plugin Base Configuration
 	MCP                     []*bot_common.MCPInfo             `gorm:"column:mcp;comment:Agent MCP Server Configuration;serializer:json" json:"mcp"`                                 // Agent MCP Server Configuration
+	Skill                   []*bot_common.SkillInfo           `gorm:"column:skill;comment:Agent Skill Configuration;serializer:json" json:"skill"`                                  // Agent Skill Configuration
 	Knowledge               *bot_common.Knowledge             `gorm:"column:knowledge;comment:Agent Knowledge Base Configuration;serializer:json" json:"knowledge"`                 // Agent Knowledge Base Configuration
 	Workflow                []*bot_common.WorkflowInfo        `gorm:"column:workflow;comment:Agent Workflow Configuration;serializer:json" json:"workflow"`                         // Agent Workflow Configuration
 	SuggestReply            *bot_common.SuggestReplyInfo      `gorm:"column:suggest_reply;comment:Suggested Replies;serializer:json" json:"suggest_reply"`                          // Suggested Replies

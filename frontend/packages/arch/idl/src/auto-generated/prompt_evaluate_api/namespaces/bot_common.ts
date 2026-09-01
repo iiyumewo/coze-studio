@@ -599,6 +599,8 @@ export interface BotInfo {
   layout_info?: LayoutInfo;
   business_type?: BusinessType;
   mcp_info_list?: Array<MCPInfo>;
+  /** List of Skills enabled for the bot */
+  skill_info_list?: Array<SkillInfo>;
 }
 
 /** bot信息 for 更新 */
@@ -668,6 +670,8 @@ export interface BotInfoForUpdate {
   /** workflow模式的编排信息 */
   layout_info?: LayoutInfo;
   mcp_info_list?: Array<MCPInfo>;
+  /** List of Skills enabled for the bot */
+  skill_info_list?: Array<SkillInfo>;
 }
 
 export interface BotTagInfo {
@@ -955,6 +959,11 @@ export interface PluginInfo {
 export interface MCPInfo {
   /** MCP Server ID; the first version enables all tools from the server */
   mcp_server_id: string;
+}
+
+export interface SkillInfo {
+  /** Skill ID */
+  skill_id: string;
 }
 
 export interface PluginParameter {

@@ -3459,6 +3459,11 @@ table "single_agent_draft" {
     type    = json
     comment = "Agent MCP Server Configuration"
   }
+  column "skill" {
+    null    = true
+    type    = json
+    comment = "Agent Skill Configuration"
+  }
   column "knowledge" {
     null    = true
     type    = json
@@ -3702,6 +3707,11 @@ table "single_agent_version" {
     null    = true
     type    = json
     comment = "Agent MCP Server Configuration"
+  }
+  column "skill" {
+    null    = true
+    type    = json
+    comment = "Agent Skill Configuration"
   }
   column "knowledge" {
     null    = true

@@ -74,6 +74,12 @@ export const getBotDetailDtoInfo = () => {
       plugin_info_list: isMulti
         ? undefined
         : botSkill.transformVo2Dto.plugin(pluginApis),
+      mcp_info_list: isMulti
+        ? undefined
+        : botSkill.transformVo2Dto.mcp(botSkill.mcpServers),
+      skill_info_list: isMulti
+        ? undefined
+        : botSkill.transformVo2Dto.skill(botSkill.skills),
       workflow_info_list: isMulti
         ? undefined
         : botSkill.transformVo2Dto.workflow(workflows),

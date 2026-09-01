@@ -82,7 +82,39 @@ CREATE TABLE IF NOT EXISTS `single_agent_draft` (`id` bigint unsigned NOT NULL A
 CREATE TABLE IF NOT EXISTS `single_agent_publish` (`id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id', `agent_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'agent_id', `publish_id` varchar(50) NOT NULL DEFAULT '' COMMENT 'publish id' COLLATE utf8mb4_general_ci, `connector_ids` json NULL COMMENT 'connector_ids', `version` varchar(255) NOT NULL DEFAULT '' COMMENT 'Agent Version', `publish_info` text NULL COMMENT 'publish info' COLLATE utf8mb4_general_ci, `publish_time` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'publish time', `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds', `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time in Milliseconds', `creator_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'creator id', `status` tinyint NOT NULL DEFAULT 0 COMMENT 'Status 0: In use 1: Delete 3: Disabled', `extra` json NULL COMMENT 'extra', PRIMARY KEY (`id`), INDEX `idx_agent_id_version` (`agent_id`, `version`), INDEX `idx_creator_id` (`creator_id`), INDEX `idx_publish_id` (`publish_id`)) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Bot connector and release version info';
 -- Create 'single_agent_version' table
 CREATE TABLE IF NOT EXISTS `single_agent_version` (`id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key ID', `agent_id` bigint NOT NULL DEFAULT 0 COMMENT 'Agent ID', `creator_id` bigint NOT NULL DEFAULT 0 COMMENT 'Creator ID', `space_id` bigint NOT NULL DEFAULT 0 COMMENT 'Space ID', `name` varchar(255) NOT NULL DEFAULT '' COMMENT 'Agent Name', `description` text NULL COMMENT 'Agent Description', `icon_uri` varchar(255) NOT NULL DEFAULT '' COMMENT 'Icon URI', `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Create Time in Milliseconds', `bot_mode` tinyint NOT NULL DEFAULT 0 COMMENT 'bot mode,0:single mode 2:chatflow mode', `layout_info` text NULL COMMENT 'chatflow layout info', `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time in Milliseconds', `deleted_at` datetime(3) NULL COMMENT 'delete time in millisecond', `variables_meta_id` bigint NULL COMMENT 'variables meta table ID', `model_info` json NULL COMMENT 'Model Configuration Information', `onboarding_info` json NULL COMMENT 'Onboarding Information', `prompt` json NULL COMMENT 'Agent Prompt Configuration', `plugin` json NULL COMMENT 'Agent Plugin Base Configuration', `mcp` json NULL COMMENT 'Agent MCP Server Configuration', `knowledge` json NULL COMMENT 'Agent Knowledge Base Configuration', `workflow` json NULL COMMENT 'Agent Workflow Configuration', `suggest_reply` json NULL COMMENT 'Suggested Replies', `jump_config` json NULL COMMENT 'Jump Configuration', `connector_id` bigint unsigned NOT NULL COMMENT 'Connector ID', `version` varchar(255) NOT NULL DEFAULT '' COMMENT 'Agent Version', `background_image_info_list` json NULL COMMENT 'Background image', `database_config` json NULL COMMENT 'Agent Database Base Configuration', `shortcut_command` json NULL COMMENT 'shortcut command', PRIMARY KEY (`id`), INDEX `idx_creator_id` (`creator_id`), UNIQUE INDEX `uniq_agent_id_and_version_connector_id` (`agent_id`, `version`, `connector_id`)) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Single Agent Version Copy Table';
--- Create 'space' table
+-- Ensure Agent Skill columns exist before creating the remaining tables
+SET @skill_column_exists := (
+  SELECT COUNT(*)
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'single_agent_draft'
+    AND COLUMN_NAME = 'skill'
+);
+SET @skill_add_sql := IF(
+  @skill_column_exists = 0,
+  'ALTER TABLE `single_agent_draft` ADD COLUMN `skill` json NULL COMMENT ''Agent Skill Configuration'' AFTER `mcp`',
+  'SET @skill_noop = 1'
+);
+PREPARE skill_add_stmt FROM @skill_add_sql;
+EXECUTE skill_add_stmt;
+DEALLOCATE PREPARE skill_add_stmt;
+
+SET @skill_column_exists := (
+  SELECT COUNT(*)
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'single_agent_version'
+    AND COLUMN_NAME = 'skill'
+);
+SET @skill_add_sql := IF(
+  @skill_column_exists = 0,
+  'ALTER TABLE `single_agent_version` ADD COLUMN `skill` json NULL COMMENT ''Agent Skill Configuration'' AFTER `mcp`',
+  'SET @skill_noop = 1'
+);
+PREPARE skill_add_stmt FROM @skill_add_sql;
+EXECUTE skill_add_stmt;
+DEALLOCATE PREPARE skill_add_stmt;
+
 CREATE TABLE IF NOT EXISTS `space` (`id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key ID, Space ID', `owner_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Owner ID', `name` varchar(200) NOT NULL DEFAULT '' COMMENT 'Space Name', `description` varchar(2000) NOT NULL DEFAULT '' COMMENT 'Space Description', `icon_uri` varchar(200) NOT NULL DEFAULT '' COMMENT 'Icon URI', `creator_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Creator ID', `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Creation Time (Milliseconds)', `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time (Milliseconds)', `deleted_at` bigint unsigned NULL COMMENT 'Deletion Time (Milliseconds)', PRIMARY KEY (`id`), INDEX `idx_creator_id` (`creator_id`), INDEX `idx_owner_id` (`owner_id`)) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Space Table' AUTO_INCREMENT 7563946286781562881;
 -- Create 'space_user' table
 CREATE TABLE IF NOT EXISTS `space_user` (`id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key ID, Auto Increment', `space_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Space ID', `user_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'User ID', `role_type` int NOT NULL DEFAULT 3 COMMENT 'Role Type: 1.owner 2.admin 3.member', `created_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Creation Time (Milliseconds)', `updated_at` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'Update Time (Milliseconds)', PRIMARY KEY (`id`), INDEX `idx_user_id` (`user_id`), UNIQUE INDEX `uniq_space_user` (`space_id`, `user_id`)) ENGINE=InnoDB CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Space Member Table' AUTO_INCREMENT 2;
@@ -776,5 +808,3 @@ INSERT INTO workflow_draft (id, canvas, input_params, output_params, test_run_su
 }', '[{"name":"input","type":"string","required":true}]', '[{"name":"output","type":"string"}]', 1, 0, null, null, '1')
     ON DUPLICATE KEY UPDATE
     id = VALUES(id);
-
-

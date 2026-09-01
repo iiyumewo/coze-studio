@@ -50,6 +50,7 @@ import {
   DisablePromptCalling,
   type PluginFrom,
   type MCPInfo,
+  type SkillInfo,
   type MCPServerDetail,
 } from '@coze-arch/bot-api/playground_api';
 import { SuggestReplyMode } from '@coze-arch/bot-api/developer_api';
@@ -70,6 +71,7 @@ import {
   type TableMemoryItem,
   type VoicesInfo,
   type MCPServerItem,
+  type SkillItem,
 } from '../../types/skill';
 import {
   DEFAULT_BOT_NODE_SUGGESTION_CONFIG,
@@ -94,6 +96,8 @@ export const transformDto2Vo = {
         status: detail?.status,
       };
     }) ?? [],
+  skill: (data?: SkillInfo[]): SkillItem[] =>
+    data?.map(item => ({ ...item })) ?? [],
   plugin: (
     data?: PluginInfo[],
     plugins?: Record<Int64, PluginDetal>,
@@ -332,6 +336,16 @@ export const transformDto2Vo = {
 };
 
 export const transformVo2Dto = {
+  mcp: (servers: MCPServerItem[]): BotInfoForUpdate['mcp_info_list'] =>
+    servers.map(server => ({
+      mcp_server_id: server.mcp_server_id,
+    })),
+
+  skill: (skills: SkillItem[]): BotInfoForUpdate['skill_info_list'] =>
+    skills.map(skill => ({
+      skill_id: skill.skill_id,
+    })),
+
   plugin: (plugins: EnabledPluginApi[]): BotInfoForUpdate['plugin_info_list'] =>
     plugins.map(plugin => ({
       api_id: plugin.api_id,

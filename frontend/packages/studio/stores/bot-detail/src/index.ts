@@ -24,6 +24,8 @@ export {
   type TableMemoryItem,
   type SuggestQuestionMessage,
   type BotDetailSkill,
+  type MCPServerItem,
+  type SkillItem,
   type WorkFlowItemType,
   type DatabaseInfo,
   type DatabaseList,

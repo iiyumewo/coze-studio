@@ -21,6 +21,7 @@ import { voicesInfoConfig } from '../../../../../src/save-manager/auto-save/bot-
 import { variablesConfig } from '../../../../../src/save-manager/auto-save/bot-skill/configs/variables';
 import { taskInfoConfig } from '../../../../../src/save-manager/auto-save/bot-skill/configs/task-info';
 import { suggestionConfig } from '../../../../../src/save-manager/auto-save/bot-skill/configs/suggestion-config';
+import { skillConfig } from '../../../../../src/save-manager/auto-save/bot-skill/configs/skill';
 import { pluginConfig } from '../../../../../src/save-manager/auto-save/bot-skill/configs/plugin';
 import { onboardingConfig } from '../../../../../src/save-manager/auto-save/bot-skill/configs/onboarding-content';
 import { mcpConfig } from '../../../../../src/save-manager/auto-save/bot-skill/configs/mcp';
@@ -107,6 +108,13 @@ vi.mock(
   }),
 );
 
+vi.mock(
+  '../../../../../src/save-manager/auto-save/bot-skill/configs/skill',
+  () => ({
+    skillConfig: { key: 'skill', selector: vi.fn() },
+  }),
+);
+
 describe('bot-skill configs', () => {
   it('应该正确注册所有配置', () => {
     // Verify that the registers array contains all configurations
@@ -121,9 +129,10 @@ describe('bot-skill configs', () => {
     expect(registers).toContain(workflowsConfig);
     expect(registers).toContain(voicesInfoConfig);
     expect(registers).toContain(mcpConfig);
+    expect(registers).toContain(skillConfig);
 
     // Verify the length of the registers array
-    expect(registers.length).toBe(11);
+    expect(registers.length).toBe(12);
   });
 
   it('每个配置都应该有 key 和 selector 属性', () => {
@@ -148,6 +157,26 @@ describe('bot-skill configs', () => {
 
     expect(payload).toEqual({
       mcp_info_list: [{ mcp_server_id: '200' }],
+    });
+  });
+
+  it('应该把 Skill 引用转换为草稿保存字段', async () => {
+    const actualSkillModule = (await vi.importActual(
+      '../../../../../src/save-manager/auto-save/bot-skill/configs/skill',
+    )) as { skillConfig: typeof skillConfig };
+    const skills = [
+      {
+        skill_id: '300',
+        name: 'Filesystem Skill',
+        description: 'writes files',
+      },
+    ];
+
+    const payload =
+      await actualSkillModule.skillConfig.middleware?.onBeforeSave?.(skills);
+
+    expect(payload).toEqual({
+      skill_info_list: [{ skill_id: '300' }],
     });
   });
 });

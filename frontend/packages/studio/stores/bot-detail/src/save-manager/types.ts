@@ -29,6 +29,7 @@ export enum ItemTypeExtra {
   TaskInfo = 1031,
   TimeCapsule = 1032,
   MCP = 1033,
+  Skill = 1034,
 }
 
 export type BizKey = ItemType | ItemTypeExtra | undefined;

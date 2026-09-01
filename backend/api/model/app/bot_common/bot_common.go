@@ -4421,6 +4421,154 @@ func (p *MCPInfo) String() string {
 
 }
 
+type SkillInfo struct {
+	// Skill ID
+	SkillID int64 `thrift:"SkillID,1,required" form:"skill_id,required" json:"skill_id,string,required"`
+}
+
+func NewSkillInfo() *SkillInfo {
+	return &SkillInfo{}
+}
+
+func (p *SkillInfo) InitDefault() {
+}
+
+func (p *SkillInfo) GetSkillID() (v int64) {
+	return p.SkillID
+}
+
+var fieldIDToName_SkillInfo = map[int16]string{
+	1: "SkillID",
+}
+
+func (p *SkillInfo) Read(iprot thrift.TProtocol) (err error) {
+	var fieldTypeId thrift.TType
+	var fieldId int16
+	var issetSkillID bool = false
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.I64 {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+				issetSkillID = true
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	if !issetSkillID {
+		fieldId = 1
+		goto RequiredFieldNotSetError
+	}
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_SkillInfo[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+RequiredFieldNotSetError:
+	return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("required field %s is not set", fieldIDToName_SkillInfo[fieldId]))
+}
+
+func (p *SkillInfo) ReadField1(iprot thrift.TProtocol) error {
+
+	var _field int64
+	if v, err := iprot.ReadI64(); err != nil {
+		return err
+	} else {
+		_field = v
+	}
+	p.SkillID = _field
+	return nil
+}
+
+func (p *SkillInfo) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("SkillInfo"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *SkillInfo) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("SkillID", thrift.I64, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := oprot.WriteI64(p.SkillID); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *SkillInfo) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("SkillInfo(%+v)", *p)
+
+}
+
 type WorkflowInfo struct {
 	// WorkflowId
 	WorkflowId *int64 `thrift:"WorkflowId,1,optional" form:"workflow_id" json:"workflow_id,string,omitempty"`
@@ -13718,6 +13866,8 @@ type BotInfo struct {
 	BusinessType BusinessType `thrift:"BusinessType,35" form:"business_type" json:"business_type"`
 	// List of MCP Servers enabled for the bot
 	MCPInfoList []*MCPInfo `thrift:"MCPInfoList,36" form:"mcp_info_list" json:"mcp_info_list"`
+	// List of Skills enabled for the bot
+	SkillInfoList []*SkillInfo `thrift:"SkillInfoList,37" form:"skill_info_list" json:"skill_info_list"`
 }
 
 func NewBotInfo() *BotInfo {
@@ -13941,6 +14091,10 @@ func (p *BotInfo) GetMCPInfoList() (v []*MCPInfo) {
 	return p.MCPInfoList
 }
 
+func (p *BotInfo) GetSkillInfoList() (v []*SkillInfo) {
+	return p.SkillInfoList
+}
+
 var fieldIDToName_BotInfo = map[int16]string{
 	1:  "BotId",
 	2:  "Name",
@@ -13978,6 +14132,7 @@ var fieldIDToName_BotInfo = map[int16]string{
 	34: "LayoutInfo",
 	35: "BusinessType",
 	36: "MCPInfoList",
+	37: "SkillInfoList",
 }
 
 func (p *BotInfo) IsSetModelInfo() bool {
@@ -14337,6 +14492,14 @@ func (p *BotInfo) Read(iprot thrift.TProtocol) (err error) {
 		case 36:
 			if fieldTypeId == thrift.LIST {
 				if err = p.ReadField36(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		case 37:
+			if fieldTypeId == thrift.LIST {
+				if err = p.ReadField37(iprot); err != nil {
 					goto ReadFieldError
 				}
 			} else if err = iprot.Skip(fieldTypeId); err != nil {
@@ -14821,6 +14984,29 @@ func (p *BotInfo) ReadField36(iprot thrift.TProtocol) error {
 	p.MCPInfoList = _field
 	return nil
 }
+func (p *BotInfo) ReadField37(iprot thrift.TProtocol) error {
+	_, size, err := iprot.ReadListBegin()
+	if err != nil {
+		return err
+	}
+	_field := make([]*SkillInfo, 0, size)
+	values := make([]SkillInfo, size)
+	for i := 0; i < size; i++ {
+		_elem := &values[i]
+		_elem.InitDefault()
+
+		if err := _elem.Read(iprot); err != nil {
+			return err
+		}
+
+		_field = append(_field, _elem)
+	}
+	if err := iprot.ReadListEnd(); err != nil {
+		return err
+	}
+	p.SkillInfoList = _field
+	return nil
+}
 
 func (p *BotInfo) Write(oprot thrift.TProtocol) (err error) {
 	var fieldId int16
@@ -14970,6 +15156,10 @@ func (p *BotInfo) Write(oprot thrift.TProtocol) (err error) {
 		}
 		if err = p.writeField36(oprot); err != nil {
 			fieldId = 36
+			goto WriteFieldError
+		}
+		if err = p.writeField37(oprot); err != nil {
+			fieldId = 37
 			goto WriteFieldError
 		}
 	}
@@ -15631,6 +15821,30 @@ WriteFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 36 begin error: ", p), err)
 WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 36 end error: ", p), err)
+}
+func (p *BotInfo) writeField37(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("SkillInfoList", thrift.LIST, 37); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := oprot.WriteListBegin(thrift.STRUCT, len(p.SkillInfoList)); err != nil {
+		return err
+	}
+	for _, v := range p.SkillInfoList {
+		if err := v.Write(oprot); err != nil {
+			return err
+		}
+	}
+	if err := oprot.WriteListEnd(); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 37 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 37 end error: ", p), err)
 }
 
 func (p *BotInfo) String() string {
@@ -20896,6 +21110,8 @@ type BotInfoForUpdate struct {
 	LayoutInfo *LayoutInfo `thrift:"LayoutInfo,33,optional" form:"layout_info" json:"layout_info,omitempty"`
 	// List of MCP Servers enabled for the bot
 	MCPInfoList []*MCPInfo `thrift:"MCPInfoList,34,optional" form:"mcp_info_list" json:"mcp_info_list,omitempty"`
+	// List of Skills enabled for the bot
+	SkillInfoList []*SkillInfo `thrift:"SkillInfoList,35,optional" form:"skill_info_list" json:"skill_info_list,omitempty"`
 }
 
 func NewBotInfoForUpdate() *BotInfoForUpdate {
@@ -21206,6 +21422,15 @@ func (p *BotInfoForUpdate) GetMCPInfoList() (v []*MCPInfo) {
 	return p.MCPInfoList
 }
 
+var BotInfoForUpdate_SkillInfoList_DEFAULT []*SkillInfo
+
+func (p *BotInfoForUpdate) GetSkillInfoList() (v []*SkillInfo) {
+	if !p.IsSetSkillInfoList() {
+		return BotInfoForUpdate_SkillInfoList_DEFAULT
+	}
+	return p.SkillInfoList
+}
+
 var fieldIDToName_BotInfoForUpdate = map[int16]string{
 	1:  "BotId",
 	2:  "Name",
@@ -21241,6 +21466,7 @@ var fieldIDToName_BotInfoForUpdate = map[int16]string{
 	32: "UserQueryCollectConf",
 	33: "LayoutInfo",
 	34: "MCPInfoList",
+	35: "SkillInfoList",
 }
 
 func (p *BotInfoForUpdate) IsSetBotId() bool {
@@ -21373,6 +21599,10 @@ func (p *BotInfoForUpdate) IsSetLayoutInfo() bool {
 
 func (p *BotInfoForUpdate) IsSetMCPInfoList() bool {
 	return p.MCPInfoList != nil
+}
+
+func (p *BotInfoForUpdate) IsSetSkillInfoList() bool {
+	return p.SkillInfoList != nil
 }
 
 func (p *BotInfoForUpdate) Read(iprot thrift.TProtocol) (err error) {
@@ -21660,6 +21890,14 @@ func (p *BotInfoForUpdate) Read(iprot thrift.TProtocol) (err error) {
 		case 34:
 			if fieldTypeId == thrift.LIST {
 				if err = p.ReadField34(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		case 35:
+			if fieldTypeId == thrift.LIST {
+				if err = p.ReadField35(iprot); err != nil {
 					goto ReadFieldError
 				}
 			} else if err = iprot.Skip(fieldTypeId); err != nil {
@@ -22123,6 +22361,29 @@ func (p *BotInfoForUpdate) ReadField34(iprot thrift.TProtocol) error {
 	p.MCPInfoList = _field
 	return nil
 }
+func (p *BotInfoForUpdate) ReadField35(iprot thrift.TProtocol) error {
+	_, size, err := iprot.ReadListBegin()
+	if err != nil {
+		return err
+	}
+	_field := make([]*SkillInfo, 0, size)
+	values := make([]SkillInfo, size)
+	for i := 0; i < size; i++ {
+		_elem := &values[i]
+		_elem.InitDefault()
+
+		if err := _elem.Read(iprot); err != nil {
+			return err
+		}
+
+		_field = append(_field, _elem)
+	}
+	if err := iprot.ReadListEnd(); err != nil {
+		return err
+	}
+	p.SkillInfoList = _field
+	return nil
+}
 
 func (p *BotInfoForUpdate) Write(oprot thrift.TProtocol) (err error) {
 	var fieldId int16
@@ -22264,6 +22525,10 @@ func (p *BotInfoForUpdate) Write(oprot thrift.TProtocol) (err error) {
 		}
 		if err = p.writeField34(oprot); err != nil {
 			fieldId = 34
+			goto WriteFieldError
+		}
+		if err = p.writeField35(oprot); err != nil {
+			fieldId = 35
 			goto WriteFieldError
 		}
 	}
@@ -22957,6 +23222,32 @@ WriteFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 34 begin error: ", p), err)
 WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 34 end error: ", p), err)
+}
+func (p *BotInfoForUpdate) writeField35(oprot thrift.TProtocol) (err error) {
+	if p.IsSetSkillInfoList() {
+		if err = oprot.WriteFieldBegin("SkillInfoList", thrift.LIST, 35); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := oprot.WriteListBegin(thrift.STRUCT, len(p.SkillInfoList)); err != nil {
+			return err
+		}
+		for _, v := range p.SkillInfoList {
+			if err := v.Write(oprot); err != nil {
+				return err
+			}
+		}
+		if err := oprot.WriteListEnd(); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 35 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 35 end error: ", p), err)
 }
 
 func (p *BotInfoForUpdate) String() string {

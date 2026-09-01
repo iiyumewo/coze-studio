@@ -33,6 +33,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/domain/plugin/service"
 	search "github.com/coze-dev/coze-studio/backend/domain/search/service"
 	shortcutCmd "github.com/coze-dev/coze-studio/backend/domain/shortcutcmd/service"
+	skillentity "github.com/coze-dev/coze-studio/backend/domain/skill/entity"
 	user "github.com/coze-dev/coze-studio/backend/domain/user/service"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow"
 	"github.com/coze-dev/coze-studio/backend/infra/cache"
@@ -49,6 +50,10 @@ type (
 type MCPServerReader interface {
 	GetByID(ctx context.Context, id int64) (*mcpentity.MCPServer, error)
 	MGetByIDs(ctx context.Context, spaceID int64, ids []int64) ([]*mcpentity.MCPServer, error)
+}
+
+type SkillReader interface {
+	GetByID(ctx context.Context, id int64) (*skillentity.Skill, error)
 }
 
 var SingleAgentSVC *SingleAgentApplicationService
@@ -71,6 +76,7 @@ type ServiceComponents struct {
 	DatabaseDomainSVC    database.Database
 	ShortcutCMDDomainSVC shortcutCmd.ShortcutCmd
 	MCPServerReader      MCPServerReader
+	SkillReader          SkillReader
 	CPStore              compose.CheckPointStore
 }
 

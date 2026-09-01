@@ -59,6 +59,7 @@ func newSingleAgentVersion(db *gorm.DB, opts ...gen.DOOption) singleAgentVersion
 	_singleAgentVersion.Prompt = field.NewField(tableName, "prompt")
 	_singleAgentVersion.Plugin = field.NewField(tableName, "plugin")
 	_singleAgentVersion.MCP = field.NewField(tableName, "mcp")
+	_singleAgentVersion.Skill = field.NewField(tableName, "skill")
 	_singleAgentVersion.Knowledge = field.NewField(tableName, "knowledge")
 	_singleAgentVersion.Workflow = field.NewField(tableName, "workflow")
 	_singleAgentVersion.SuggestReply = field.NewField(tableName, "suggest_reply")
@@ -97,6 +98,7 @@ type singleAgentVersion struct {
 	Prompt                  field.Field  // Agent Prompt Configuration
 	Plugin                  field.Field  // Agent Plugin Base Configuration
 	MCP                     field.Field  // Agent MCP Server Configuration
+	Skill                   field.Field  // Agent Skill Configuration
 	Knowledge               field.Field  // Agent Knowledge Base Configuration
 	Workflow                field.Field  // Agent Workflow Configuration
 	SuggestReply            field.Field  // Suggested Replies
@@ -140,6 +142,7 @@ func (s *singleAgentVersion) updateTableName(table string) *singleAgentVersion {
 	s.Prompt = field.NewField(table, "prompt")
 	s.Plugin = field.NewField(table, "plugin")
 	s.MCP = field.NewField(table, "mcp")
+	s.Skill = field.NewField(table, "skill")
 	s.Knowledge = field.NewField(table, "knowledge")
 	s.Workflow = field.NewField(table, "workflow")
 	s.SuggestReply = field.NewField(table, "suggest_reply")
@@ -167,7 +170,7 @@ func (s *singleAgentVersion) GetFieldByName(fieldName string) (field.OrderExpr, 
 }
 
 func (s *singleAgentVersion) fillFieldMap() {
-	s.fieldMap = make(map[string]field.Expr, 27)
+	s.fieldMap = make(map[string]field.Expr, 28)
 	s.fieldMap["id"] = s.ID
 	s.fieldMap["agent_id"] = s.AgentID
 	s.fieldMap["creator_id"] = s.CreatorID
@@ -184,6 +187,7 @@ func (s *singleAgentVersion) fillFieldMap() {
 	s.fieldMap["prompt"] = s.Prompt
 	s.fieldMap["plugin"] = s.Plugin
 	s.fieldMap["mcp"] = s.MCP
+	s.fieldMap["skill"] = s.Skill
 	s.fieldMap["knowledge"] = s.Knowledge
 	s.fieldMap["workflow"] = s.Workflow
 	s.fieldMap["suggest_reply"] = s.SuggestReply

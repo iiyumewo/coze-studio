@@ -111,6 +111,12 @@ func (s *SingleAgentApplicationService) UpdateSingleAgentDraft(ctx context.Conte
 		}
 	}
 
+	if req.BotInfo.SkillInfoList != nil {
+		if err = s.validateSkills(ctx, currentAgentInfo.SpaceID, req.BotInfo.SkillInfoList); err != nil {
+			return nil, err
+		}
+	}
+
 	updateAgentInfo, err := s.applyAgentUpdates(currentAgentInfo, req.BotInfo)
 	if err != nil {
 		return nil, err
@@ -196,6 +202,48 @@ func (s *SingleAgentApplicationService) validateMCPServers(ctx context.Context, 
 		if server.Status != mcpentity.ServerStatusEnabled {
 			return errorx.New(errno.ErrMCPValidateCode,
 				errorx.KV("msg", fmt.Sprintf("MCP server %d is disabled", serverID)))
+		}
+	}
+
+	return nil
+}
+
+func (s *SingleAgentApplicationService) validateSkills(ctx context.Context, spaceID int64, refs []*bot_common.SkillInfo) error {
+	skillIDs := make([]int64, 0, len(refs))
+	seen := make(map[int64]struct{}, len(refs))
+	for _, ref := range refs {
+		if ref == nil || ref.GetSkillID() <= 0 {
+			return errorx.New(errno.ErrSkillInvalidParamCode,
+				errorx.KV("msg", "skill_id must be greater than zero"))
+		}
+
+		skillID := ref.GetSkillID()
+		if _, exists := seen[skillID]; exists {
+			return errorx.New(errno.ErrSkillInvalidParamCode,
+				errorx.KV("msg", fmt.Sprintf("duplicate skill_id: %d", skillID)))
+		}
+		seen[skillID] = struct{}{}
+		skillIDs = append(skillIDs, skillID)
+	}
+
+	if len(skillIDs) == 0 {
+		return nil
+	}
+	if s.appContext.SkillReader == nil {
+		return errorx.WrapByCode(fmt.Errorf("Skill reader is not initialized"), errno.ErrSkillGetCode)
+	}
+
+	for _, skillID := range skillIDs {
+		sk, err := s.appContext.SkillReader.GetByID(ctx, skillID)
+		if err != nil {
+			return errorx.WrapByCode(err, errno.ErrSkillGetCode)
+		}
+		if sk == nil {
+			return errorx.WrapByCode(fmt.Errorf("Skill %d not found", skillID), errno.ErrSkillGetCode)
+		}
+		if sk.SpaceID != spaceID {
+			return errorx.New(errno.ErrSkillPermissionCode,
+				errorx.KV("msg", fmt.Sprintf("no permission for Skill %d", skillID)))
 		}
 	}
 
@@ -399,6 +447,10 @@ func (s *SingleAgentApplicationService) applyAgentUpdates(target *entity.SingleA
 		target.MCP = patch.MCPInfoList
 	}
 
+	if patch.SkillInfoList != nil {
+		target.Skill = patch.SkillInfoList
+	}
+
 	if patch.Knowledge != nil {
 		target.Knowledge = patch.Knowledge
 	}
@@ -476,6 +528,7 @@ func (s *SingleAgentApplicationService) singleAgentDraftDo2Vo(ctx context.Contex
 		PromptInfo:              do.Prompt,
 		PluginInfoList:          do.Plugin,
 		MCPInfoList:             do.MCP,
+		SkillInfoList:           do.Skill,
 		Knowledge:               do.Knowledge,
 		WorkflowInfoList:        do.Workflow,
 		SuggestReplyInfo:        do.SuggestReply,
