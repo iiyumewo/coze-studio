@@ -32,6 +32,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/internal/agentflow"
 	"github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/repository"
+	infraSkill "github.com/coze-dev/coze-studio/backend/infra/skill"
 	"github.com/coze-dev/coze-studio/backend/pkg/errorx"
 	"github.com/coze-dev/coze-studio/backend/pkg/kvstore"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/slices"
@@ -49,7 +50,12 @@ type Components struct {
 	PublishInfoRepo  *kvstore.KVStore[entity.PublishInfo]
 	CounterRepo      repository.CounterRepository
 
-	CPStore compose.CheckPointStore
+	CPStore      compose.CheckPointStore
+	SkillRuntime SkillRuntime
+}
+
+type SkillRuntime interface {
+	PrepareRuntime(ctx context.Context, spaceID int64, refs []*bot_common.SkillInfo) (*infraSkill.Catalog, error)
 }
 
 func NewService(c *Components) SingleAgent {
@@ -99,6 +105,13 @@ func (s *singleAgentImpl) StreamExecute(ctx context.Context, req *entity.Execute
 	if req.Identity.Version == "" {
 		req.Identity.Version = ae.Version
 	}
+	var skillCatalog *infraSkill.Catalog
+	if s.SkillRuntime != nil && len(ae.Skill) > 0 {
+		skillCatalog, err = s.SkillRuntime.PrepareRuntime(ctx, ae.SpaceID, ae.Skill)
+		if err != nil {
+			return nil, fmt.Errorf("prepare Agent Skills: %w", err)
+		}
+	}
 
 	conf := &agentflow.Config{
 		Agent:    ae,
@@ -109,6 +122,7 @@ func (s *singleAgentImpl) StreamExecute(ctx context.Context, req *entity.Execute
 		CustomVariables: req.CustomVariables,
 
 		ConversationID: req.ConversationID,
+		SkillCatalog:   skillCatalog,
 	}
 	rn, err := agentflow.BuildAgent(ctx, conf)
 	if err != nil {

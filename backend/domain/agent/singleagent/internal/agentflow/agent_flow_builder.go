@@ -43,6 +43,7 @@ type Config struct {
 	CustomVariables map[string]string
 
 	ConversationID int64
+	SkillCatalog   *skill.Catalog
 }
 
 const (
@@ -76,9 +77,13 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 		}
 	}
 
-	skillCatalog, err := skill.LoadCatalog(skill.DefaultRoot())
-	if err != nil {
-		return nil, fmt.Errorf("load local skills: %w", err)
+	skillCatalog := conf.SkillCatalog
+	if skillCatalog == nil {
+		var err error
+		skillCatalog, err = skill.LoadCatalog(skill.DefaultRoot())
+		if err != nil {
+			return nil, fmt.Errorf("load local skills: %w", err)
+		}
 	}
 
 	promptVars := &promptVariables{

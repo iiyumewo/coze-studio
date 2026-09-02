@@ -77,6 +77,7 @@ type ServiceComponents struct {
 	ShortcutCMDDomainSVC shortcutCmd.ShortcutCmd
 	MCPServerReader      MCPServerReader
 	SkillReader          SkillReader
+	SkillRuntime         singleagent.SkillRuntime
 	CPStore              compose.CheckPointStore
 }
 
@@ -87,6 +88,7 @@ func InitService(c *ServiceComponents) (*SingleAgentApplicationService, error) {
 		PublishInfoRepo:  kvstore.New[entity.PublishInfo](c.DB),
 		CounterRepo:      repository.NewCounterRepo(c.Cache),
 		CPStore:          c.CPStore,
+		SkillRuntime:     c.SkillRuntime,
 	}
 
 	singleAgentDomainSVC := singleagent.NewService(domainComponents)

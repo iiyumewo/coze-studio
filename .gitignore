@@ -8,6 +8,7 @@
 .env
 .env.debug
 .env.oceanbase
+.env.prod.local
 
 # Test binary, built with `go test -c`
 *.test

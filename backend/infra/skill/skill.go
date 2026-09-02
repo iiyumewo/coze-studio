@@ -62,7 +62,31 @@ func DefaultWorkspaceRoot() string {
 	return filepath.Join(fileutil.GetWorkingDirectory(), "runtime", "conversations")
 }
 
+func DefaultRuntimeRoot() string {
+	if root := strings.TrimSpace(os.Getenv("COZE_SKILLS_RUNTIME_ROOT")); root != "" {
+		return root
+	}
+	return filepath.Join(fileutil.GetWorkingDirectory(), "runtime", "skills")
+}
+
 func LoadCatalog(root string) (*Catalog, error) {
+	return loadCatalog(root, nil)
+}
+
+// LoadCatalogForIDs loads only the selected Skill directories from a runtime root.
+// This keeps stale caches for other Skills from becoming available to an Agent.
+func LoadCatalogForIDs(root string, ids []string) (*Catalog, error) {
+	allowed := make(map[string]struct{}, len(ids))
+	for _, id := range ids {
+		id = strings.TrimSpace(id)
+		if id != "" {
+			allowed[id] = struct{}{}
+		}
+	}
+	return loadCatalog(root, allowed)
+}
+
+func loadCatalog(root string, allowed map[string]struct{}) (*Catalog, error) {
 	if strings.TrimSpace(root) == "" {
 		root = DefaultRoot()
 	}
@@ -88,6 +112,11 @@ func LoadCatalog(root string) (*Catalog, error) {
 	for _, entry := range entries {
 		if !entry.IsDir() || strings.HasPrefix(entry.Name(), ".") {
 			continue
+		}
+		if allowed != nil {
+			if _, ok := allowed[entry.Name()]; !ok {
+				continue
+			}
 		}
 		definition, err := loadDefinition(absoluteRoot, entry.Name())
 		if err != nil {
