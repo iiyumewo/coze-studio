@@ -25,7 +25,8 @@ WORKDIR /app
 # Install runtime dependencies for Go app and base for Python
 # pax-utils for scanelf, python3 for running Python, python3-dev for headers/shared libs
 # bind-tools for nslookup etc., file for debugging file types
-RUN apk add --no-cache pax-utils python3 python3-dev bind-tools file deno curl
+# docker-cli lets the Skill runner call the host Docker Engine through its socket.
+RUN apk add --no-cache pax-utils python3 python3-dev bind-tools file deno curl docker-cli
 
 RUN deno run -A jsr:@langchain/pyodide-sandbox -c "print('Hello, World')"
 

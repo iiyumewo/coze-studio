@@ -1,6 +1,6 @@
 name: coze-studio
 x-env-file: &env_file
-  - .env
+  - ${COZE_ENV_FILE:-.env}
 
 services:
   mysql:
@@ -398,7 +398,7 @@ services:
     #   - '8888'
     #   - '8889'
     volumes:
-      - .env:/app/.env
+      - ${COZE_ENV_FILE:-.env}:/app/.env:ro
       - ../backend/conf:/app/resources/conf
       # - ../backend/static:/app/resources/static
     depends_on:

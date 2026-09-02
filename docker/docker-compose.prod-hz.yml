@@ -1,0 +1,13 @@
+name: coze-studio
+
+services:
+  coze-server:
+    image: hz-coze-server:latest
+    volumes:
+      # The server invokes the host Docker Engine to create Skill containers.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Keep the source path identical inside the server and on the host.
+      - ${COZE_RUNTIME_HOST_ROOT:-/opt/coze/runtime}:/opt/coze/runtime:rw
+
+  coze-web:
+    image: hz-coze-web:latest
