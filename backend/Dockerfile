@@ -3,6 +3,11 @@ FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
+# Use mainland mirrors for Alpine packages and Go modules during the build.
+RUN sed -i 's#dl-cdn.alpinelinux.org#mirrors.aliyun.com#g' /etc/apk/repositories
+ENV GOPROXY=https://goproxy.cn,direct \
+    GOSUMDB=sum.golang.google.cn
+
 # Install build dependencies for Go
 RUN apk add --no-cache git gcc libc-dev
 
@@ -21,6 +26,10 @@ RUN go build -ldflags="-s -w" -o /app/opencoze main.go
 FROM alpine:3.22.0
 
 WORKDIR /app
+
+# Use mainland mirrors for Alpine packages and Python packages during the build.
+RUN sed -i 's#dl-cdn.alpinelinux.org#mirrors.aliyun.com#g' /etc/apk/repositories
+ENV PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 
 # Install runtime dependencies for Go app and base for Python
 # pax-utils for scanelf, python3 for running Python, python3-dev for headers/shared libs

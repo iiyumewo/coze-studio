@@ -3,20 +3,20 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# if you located in China, you can use aliyun mirror to speed up
+# Use mainland mirrors for Alpine and Node package downloads.
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 # Install bash git dos2unix for TypeScript compiler
 RUN apk add --no-cache bash git dos2unix
 
-# if you located in China, you can use aliyun mirror to speed up
-RUN npm config set registry https://registry.npmmirror.com
+ENV NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
+RUN npm config set registry "$NPM_CONFIG_REGISTRY"
 
 # Copy rush.json from root directory first
 COPY rush.json ./
 
-# Install rush with retry logic
-RUN npm install -g @microsoft/rush --registry=https://registry.npmjs.org
+# Install Rush from the configured mainland npm mirror.
+RUN npm install -g @microsoft/rush --registry="$NPM_CONFIG_REGISTRY"
 
 # Copy the frontend source code (excluding node_modules and build artifacts)
 COPY frontend/ ./frontend/
@@ -40,7 +40,7 @@ RUN rush build --to @coze-studio/app
 FROM nginx:1.25-alpine
 
 
-# if you located in China, you can use aliyun mirror to speed up
+# Use the same mainland mirror for runtime Alpine packages.
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 # Install necessary tools for SSL configuration
 RUN apk add --no-cache bash
