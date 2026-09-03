@@ -48,6 +48,10 @@ RUN apk add --no-cache bash
 # Copy build artifacts to nginx static directory
 COPY --from=builder /app/frontend/apps/coze-studio/dist /usr/share/nginx/html
 
+# Copy the Nginx configuration into the image so runtime does not need host mounts.
+COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY docker/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
+
 EXPOSE 8888
 
 # Start nginx
