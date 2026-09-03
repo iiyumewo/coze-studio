@@ -24,6 +24,8 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/coze-dev/coze-studio/backend/infra/cache"
+	"github.com/coze-dev/coze-studio/backend/pkg/envkey"
+	"github.com/coze-dev/coze-studio/backend/types/consts"
 )
 
 type Cmdable = cache.Cmdable
@@ -31,16 +33,24 @@ type Cmdable = cache.Cmdable
 func New() cache.Cmdable {
 	addr := os.Getenv("REDIS_ADDR")
 	password := os.Getenv("REDIS_PASSWORD")
+	database := envkey.GetIntD(consts.RedisDB, 0)
+	if database < 0 {
+		database = 0
+	}
 
-	return NewWithAddrAndPassword(addr, password)
+	return newClient(addr, password, database)
 }
 
 func NewWithAddrAndPassword(addr, password string) cache.Cmdable {
+	return newClient(addr, password, 0)
+}
+
+func newClient(addr, password string, database int) cache.Cmdable {
 	cache.SetDefaultNilError(redis.Nil)
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     addr, // Redis地址
-		DB:       0,    // 默认数据库
+		DB:       database,
 		Password: password,
 		// connection pool configuration
 		PoolSize:        100,             // Maximum number of connections (recommended to set to CPU cores * 10)
