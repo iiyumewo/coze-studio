@@ -20,7 +20,9 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
+	"io"
 	"path"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -44,6 +46,12 @@ type skillArchiveMetadata struct {
 	Name        string
 	Description string
 	EntryCount  int32
+	ArchiveData []byte
+}
+
+type skillArchiveMember struct {
+	file *zip.File
+	name string
 }
 
 func validateSkillArchive(fileName string, data []byte) (*skillArchiveMetadata, error) {
@@ -66,25 +74,36 @@ func validateSkillArchive(fileName string, data []byte) (*skillArchiveMetadata, 
 		return nil, fmt.Errorf("skill archive contains too many entries")
 	}
 
-	var manifestFile *zip.File
+	members := make([]skillArchiveMember, 0, len(archive.File))
 	var unpackedSize int64
 	for _, file := range archive.File {
-		if file.Name == "" || path.IsAbs(file.Name) || path.Clean(file.Name) != file.Name || strings.HasPrefix(file.Name, "../") {
-			return nil, fmt.Errorf("skill archive contains an unsafe path: %q", file.Name)
+		isDir := file.FileInfo().IsDir() || strings.HasSuffix(file.Name, "/")
+		name, err := normalizeSkillArchiveEntryName(file.Name, isDir)
+		if err != nil {
+			return nil, err
+		}
+		if isDir {
+			continue
 		}
 		if file.UncompressedSize64 > uint64(maxSkillUnpackedSize) || unpackedSize > maxSkillUnpackedSize-int64(file.UncompressedSize64) {
 			return nil, fmt.Errorf("skill archive uncompressed content is too large")
 		}
 		unpackedSize += int64(file.UncompressedSize64)
-		if file.Name == "SKILL.md" && !file.FileInfo().IsDir() {
-			manifestFile = file
-		}
+		members = append(members, skillArchiveMember{file: file, name: name})
 	}
-	if manifestFile == nil {
+	manifestMember, err := selectSkillManifest(members)
+	if err != nil {
+		return nil, err
+	}
+	normalizedMembers, err := normalizeSkillArchiveMembers(members, manifestMember.name)
+	if err != nil {
+		return nil, err
+	}
+	if len(normalizedMembers) == 0 {
 		return nil, fmt.Errorf("skill archive must contain SKILL.md at its root")
 	}
 
-	reader, err := manifestFile.Open()
+	reader, err := manifestMember.file.Open()
 	if err != nil {
 		return nil, fmt.Errorf("open SKILL.md: %w", err)
 	}
@@ -102,11 +121,130 @@ func validateSkillArchive(fileName string, data []byte) (*skillArchiveMetadata, 
 	if err != nil {
 		return nil, err
 	}
+	normalizedArchive, err := buildNormalizedSkillArchive(normalizedMembers)
+	if err != nil {
+		return nil, fmt.Errorf("normalize skill archive: %w", err)
+	}
+	if int64(len(normalizedArchive)) > maxSkillArchiveSize {
+		return nil, fmt.Errorf("normalized skill archive exceeds %d MB", maxSkillArchiveSize/(1024*1024))
+	}
 	return &skillArchiveMetadata{
 		Name:        manifest.Name,
 		Description: manifest.Description,
-		EntryCount:  int32(len(archive.File)),
+		EntryCount:  int32(len(normalizedMembers)),
+		ArchiveData: normalizedArchive,
 	}, nil
+}
+
+func normalizeSkillArchiveEntryName(name string, isDir bool) (string, error) {
+	originalName := name
+	if isDir {
+		name = strings.TrimSuffix(name, "/")
+	}
+	if name == "" || name == "." || name == ".." || strings.ContainsRune(name, '\x00') || strings.Contains(name, "\\") || path.IsAbs(name) || path.Clean(name) != name || strings.HasPrefix(name, "../") {
+		return "", fmt.Errorf("skill archive contains an unsafe path: %q", originalName)
+	}
+	return name, nil
+}
+
+func selectSkillManifest(members []skillArchiveMember) (skillArchiveMember, error) {
+	candidates := make([]skillArchiveMember, 0)
+	for _, member := range members {
+		if path.Base(member.name) == "SKILL.md" {
+			candidates = append(candidates, member)
+		}
+	}
+	if len(candidates) == 0 {
+		return skillArchiveMember{}, fmt.Errorf("skill archive must contain SKILL.md at its root")
+	}
+	sort.Slice(candidates, func(i, j int) bool {
+		leftParent, rightParent := path.Dir(candidates[i].name), path.Dir(candidates[j].name)
+		leftDepth, rightDepth := skillArchivePathDepth(leftParent), skillArchivePathDepth(rightParent)
+		if leftDepth != rightDepth {
+			return leftDepth < rightDepth
+		}
+		return candidates[i].name < candidates[j].name
+	})
+	selectedParent := path.Dir(candidates[0].name)
+	selectedDepth := skillArchivePathDepth(selectedParent)
+	for _, candidate := range candidates[1:] {
+		parent := path.Dir(candidate.name)
+		if skillArchivePathDepth(parent) == selectedDepth && parent != selectedParent {
+			return skillArchiveMember{}, fmt.Errorf("skill archive contains multiple Skill roots")
+		}
+	}
+	return candidates[0], nil
+}
+
+func skillArchivePathDepth(parent string) int {
+	if parent == "." || parent == "" {
+		return 0
+	}
+	return strings.Count(parent, "/") + 1
+}
+
+func normalizeSkillArchiveMembers(members []skillArchiveMember, manifestName string) ([]skillArchiveMember, error) {
+	prefix := path.Dir(manifestName)
+	if prefix == "." {
+		prefix = ""
+	} else {
+		prefix += "/"
+	}
+	allowOutsidePrefix := prefix != "" && !strings.Contains(strings.TrimSuffix(prefix, "/"), "/")
+	normalized := make(map[string]skillArchiveMember, len(members))
+	for _, member := range members {
+		name := member.name
+		if prefix != "" {
+			if strings.HasPrefix(name, prefix) {
+				name = strings.TrimPrefix(name, prefix)
+			} else if allowOutsidePrefix {
+				continue
+			} else {
+				return nil, fmt.Errorf("skill archive contains files outside skill root %q", strings.TrimSuffix(prefix, "/"))
+			}
+		}
+		if name == "" || name == "." || name == ".." {
+			return nil, fmt.Errorf("skill archive contains an invalid normalized path: %q", name)
+		}
+		if _, exists := normalized[name]; exists {
+			return nil, fmt.Errorf("skill archive contains duplicate path: %q", name)
+		}
+		normalized[name] = skillArchiveMember{file: member.file, name: name}
+	}
+	result := make([]skillArchiveMember, 0, len(normalized))
+	for _, member := range normalized {
+		result = append(result, member)
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i].name < result[j].name })
+	return result, nil
+}
+
+func buildNormalizedSkillArchive(members []skillArchiveMember) ([]byte, error) {
+	var data bytes.Buffer
+	writer := zip.NewWriter(&data)
+	for _, member := range members {
+		reader, err := member.file.Open()
+		if err != nil {
+			_ = writer.Close()
+			return nil, err
+		}
+		entryWriter, err := writer.Create(member.name)
+		if err == nil {
+			_, err = io.Copy(entryWriter, reader)
+		}
+		closeErr := reader.Close()
+		if err == nil {
+			err = closeErr
+		}
+		if err != nil {
+			_ = writer.Close()
+			return nil, err
+		}
+	}
+	if err := writer.Close(); err != nil {
+		return nil, err
+	}
+	return data.Bytes(), nil
 }
 
 func parseSkillManifest(content string) (*skillManifest, error) {

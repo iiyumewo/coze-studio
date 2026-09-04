@@ -52,7 +52,8 @@ func (s *SkillApplicationService) CreateSkill(ctx context.Context, spaceID int64
 	}
 	cleanName := filepath.Base(fileName)
 	objectKey := fmt.Sprintf("skills/%d/%d/%s", spaceID, skillID, cleanName)
-	if err = s.storage.PutObject(ctx, objectKey, data); err != nil {
+	archiveData := metadata.ArchiveData
+	if err = s.storage.PutObject(ctx, objectKey, archiveData); err != nil {
 		return nil, errorx.WrapByCode(err, errno.ErrSkillCreateCode,
 			errorx.KV("msg", "failed to store skill archive"))
 	}
@@ -60,7 +61,7 @@ func (s *SkillApplicationService) CreateSkill(ctx context.Context, spaceID int64
 	now := timeNowUnixMilli()
 	fileResp, err := s.fileSVC.UploadFile(ctx, &uploadservice.UploadFileRequest{File: &uploadentity.File{
 		Name:          cleanName,
-		FileSize:      int64(len(data)),
+		FileSize:      int64(len(archiveData)),
 		TosURI:        objectKey,
 		Status:        uploadentity.FileStatusValid,
 		Source:        uploadentity.FileSourceAPI,
@@ -89,7 +90,7 @@ func (s *SkillApplicationService) CreateSkill(ctx context.Context, spaceID int64
 		Description: metadata.Description,
 		FileID:      fileResp.File.ID,
 		FileName:    cleanName,
-		FileSize:    int64(len(data)),
+		FileSize:    int64(len(archiveData)),
 		EntryCount:  metadata.EntryCount,
 	})
 	if err != nil {

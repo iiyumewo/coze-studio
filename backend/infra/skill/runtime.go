@@ -157,8 +157,10 @@ func extractRuntimeArchive(data []byte, target string) error {
 	var declaredSize int64
 	var extractedSize int64
 	for _, entry := range archive.File {
-		if entry.Name == "" || path.IsAbs(entry.Name) || path.Clean(entry.Name) != entry.Name || strings.HasPrefix(entry.Name, "../") {
-			return fmt.Errorf("unsafe archive path %q", entry.Name)
+		isDir := entry.FileInfo().IsDir() || strings.HasSuffix(entry.Name, "/")
+		entryName, err := normalizeRuntimeArchiveEntryName(entry.Name, isDir)
+		if err != nil {
+			return err
 		}
 		if entry.Mode()&os.ModeSymlink != 0 {
 			return fmt.Errorf("symbolic links are not allowed: %q", entry.Name)
@@ -168,11 +170,11 @@ func extractRuntimeArchive(data []byte, target string) error {
 		}
 		declaredSize += int64(entry.UncompressedSize64)
 
-		destination := filepath.Join(target, filepath.FromSlash(entry.Name))
+		destination := filepath.Join(target, filepath.FromSlash(entryName))
 		if err = validateArchiveDestination(target, destination); err != nil {
 			return err
 		}
-		if entry.FileInfo().IsDir() {
+		if isDir {
 			if err = os.MkdirAll(destination, 0o755); err != nil {
 				return err
 			}
@@ -211,6 +213,17 @@ func extractRuntimeArchive(data []byte, target string) error {
 		return errors.New("Skill archive must contain SKILL.md at its root")
 	}
 	return nil
+}
+
+func normalizeRuntimeArchiveEntryName(name string, isDir bool) (string, error) {
+	originalName := name
+	if isDir {
+		name = strings.TrimSuffix(name, "/")
+	}
+	if name == "" || name == "." || name == ".." || strings.ContainsRune(name, '\x00') || strings.Contains(name, "\\") || path.IsAbs(name) || path.Clean(name) != name || strings.HasPrefix(name, "../") {
+		return "", fmt.Errorf("unsafe archive path %q", originalName)
+	}
+	return name, nil
 }
 
 func validateArchiveDestination(root, destination string) error {

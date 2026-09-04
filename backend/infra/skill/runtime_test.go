@@ -79,6 +79,29 @@ func TestExtractRuntimeArchiveRejectsUnsafePath(t *testing.T) {
 	require.ErrorContains(t, err, "unsafe archive path")
 }
 
+func TestExtractRuntimeArchiveAcceptsDirectoryEntries(t *testing.T) {
+	var data bytes.Buffer
+	archive := zip.NewWriter(&data)
+	directory := &zip.FileHeader{Name: "scripts/"}
+	directory.SetMode(os.ModeDir | 0o755)
+	_, err := archive.CreateHeader(directory)
+	require.NoError(t, err)
+	manifest, err := archive.Create(instructionsFileName)
+	require.NoError(t, err)
+	_, err = io.WriteString(manifest, "---\nname: demo\ndescription: test skill\n---\n")
+	require.NoError(t, err)
+	script, err := archive.Create("scripts/main.py")
+	require.NoError(t, err)
+	_, err = io.WriteString(script, "print('ok')")
+	require.NoError(t, err)
+	require.NoError(t, archive.Close())
+
+	target := filepath.Join(t.TempDir(), "skill")
+	require.NoError(t, extractRuntimeArchive(data.Bytes(), target))
+	require.FileExists(t, filepath.Join(target, instructionsFileName))
+	require.FileExists(t, filepath.Join(target, "scripts", "main.py"))
+}
+
 func TestPrepareRuntimeCatalogSerializesConcurrentMaterialization(t *testing.T) {
 	archive := testSkillArchive(t)
 	root := t.TempDir()
