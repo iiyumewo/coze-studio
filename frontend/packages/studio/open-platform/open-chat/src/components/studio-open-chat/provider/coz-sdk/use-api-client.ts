@@ -20,12 +20,13 @@ import { useShallow } from 'zustand/react/shallow';
 import { useMemoizedFn } from 'ahooks';
 import { TokenManager } from '@coze-common/chat-core';
 
-import { openApiHostByRegionWithToken } from '@/util/env';
+import { getApiBaseUrl } from '@/util/env';
 
 import { useChatAppStore, useChatAppProps } from '../../store';
 import { CozeApiCustom } from './helper/coze-api-custom';
 export const useApiClient = () => {
-  const { debug } = useChatAppProps();
+  const { debug, chatConfig } = useChatAppProps();
+  const apiBaseUrl = getApiBaseUrl(chatConfig.apiBaseUrl);
 
   const {
     token = '',
@@ -55,14 +56,14 @@ export const useApiClient = () => {
       new CozeApiCustom({
         token,
         allowPersonalAccessTokenInBrowser: true,
-        baseURL: openApiHostByRegionWithToken,
+        baseURL: apiBaseUrl,
         axiosOptions: {
           headers: {
             ...(debug?.cozeApiRequestHeader || {}),
           },
         },
       }),
-    [],
+    [apiBaseUrl, debug],
   );
   // 语音播放相关的token实例
   // 更新各client实例的token，

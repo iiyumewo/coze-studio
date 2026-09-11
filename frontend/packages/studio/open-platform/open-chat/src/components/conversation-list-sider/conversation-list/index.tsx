@@ -52,8 +52,9 @@ export interface ConversationListSiderRef {
         sectionId?: string;
       }
     | undefined;
-  handleCreateConversation: () => Promise<void>;
+  handleCreateConversation: (showToast?: boolean) => Promise<void>;
   handleDeleteConversation: (conversation: Conversation) => Promise<Boolean>;
+  handleConversationChange: (conversation: Conversation) => void;
 }
 
 export const ConversationList = forwardRef<
@@ -108,7 +109,7 @@ export const ConversationList = forwardRef<
     const listContainerRef = useRef<HTMLDivElement>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
 
-    const handleCreateConversation = async () => {
+    const handleCreateConversation = async (showToast = true) => {
       if (!currentConversationInfo) {
         return;
       }
@@ -131,10 +132,16 @@ export const ConversationList = forwardRef<
             ...res,
             name: '',
           });
-          Toast.info({
-            content: I18n.t('web_sdk_create_conversation', {}, '已创建新会话'),
-            showClose: false,
-          });
+          if (showToast) {
+            Toast.info({
+              content: I18n.t(
+                'web_sdk_create_conversation',
+                {},
+                '已创建新会话',
+              ),
+              showClose: false,
+            });
+          }
         }
       } catch (error) {
         console.error(error);
@@ -193,6 +200,7 @@ export const ConversationList = forwardRef<
       },
       handleCreateConversation,
       handleDeleteConversation,
+      handleConversationChange,
     }));
 
     useEffect(() => {

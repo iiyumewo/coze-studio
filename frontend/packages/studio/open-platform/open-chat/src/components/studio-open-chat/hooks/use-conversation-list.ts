@@ -90,8 +90,9 @@ export const useConversationList = (
       }
       try {
         const result = await cozeApiSdk.conversations.list(params);
+        const conversationList = result.conversations ?? [];
         return {
-          data: result.conversations,
+          data: conversationList,
           has_more: result.has_more,
         };
       } catch (e) {

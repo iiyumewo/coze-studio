@@ -59,6 +59,7 @@ export const NonIframeApp: FC<
   };
   return (
     <BuilderChat
+      apiBaseUrl={options?.apiBaseUrl}
       workflow={{
         id: options?.config?.appInfo?.workflowId,
         parameters: {

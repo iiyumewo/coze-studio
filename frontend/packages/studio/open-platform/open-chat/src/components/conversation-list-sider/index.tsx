@@ -121,12 +121,23 @@ export const ConversationListSider = forwardRef<
         await handleUpdateConversationName(modalInfo.conversation);
       } else {
         if (modalInfo.conversation.id === currentConversationInfo?.id) {
+          const nextConversation = conversations.find(
+            conversation => conversation.id !== modalInfo.conversation.id,
+          );
           if (
             await conversationListRef.current?.handleDeleteConversation(
               modalInfo.conversation,
             )
           ) {
-            await conversationListRef.current?.handleCreateConversation();
+            if (nextConversation) {
+              conversationListRef.current?.handleConversationChange(
+                nextConversation,
+              );
+            } else {
+              await conversationListRef.current?.handleCreateConversation(
+                false,
+              );
+            }
           }
         } else {
           await conversationListRef.current?.handleDeleteConversation(

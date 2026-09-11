@@ -137,6 +137,7 @@ export interface WebSdkChatProps {
   useInIframe?: boolean; //是否在Iframe中，对样式有影响
   chatConfig: CozeChatConfig;
   userInfo?: OpenUserInfo;
+  onInitStateChange?: (status: 'initSuccess' | 'initFail') => void;
   onImageClick?: ChatAreaEventCallback['onImageClick'];
   onThemeChange?: (theme: 'bg-theme' | 'light') => void;
 }

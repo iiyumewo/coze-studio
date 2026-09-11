@@ -21,7 +21,7 @@ import {
   type RequestManagerOptions,
 } from '@coze-common/chat-core';
 
-import { openApiHostByRegionWithToken } from '@/util/env';
+import { getApiBaseUrl } from '@/util/env';
 
 import { type IBuilderChatProps } from '../type';
 import { getConnectorId } from '../helper/get-connector-id';
@@ -85,7 +85,7 @@ export const useCoreManager = (
                     }
                   : undefined;
                 requestConfig.body = JSON.stringify(bodyData);
-                requestConfig.url = `${openApiHostByRegionWithToken}/v1/workflows/chat`;
+                requestConfig.url = `${getApiBaseUrl(refProps.current.apiBaseUrl)}/v1/workflows/chat`;
                 requestConfig.headers.push(
                   ...Object.entries(refProps.current?.workflow?.header || {}),
                 );

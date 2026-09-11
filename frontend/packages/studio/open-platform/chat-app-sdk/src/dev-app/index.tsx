@@ -21,7 +21,10 @@ import { createRoot } from 'react-dom/client';
 import DevApp from './App';
 
 const rootEl = document.createElement('div');
-rootEl.setAttribute('className', 'coze-chat-sdk');
+rootEl.setAttribute('class', 'coze-chat-sdk');
+rootEl.style.position = 'relative';
+rootEl.style.width = '100%';
+rootEl.style.height = '100%';
 document.body.append(rootEl);
 
 const root = createRoot(rootEl);

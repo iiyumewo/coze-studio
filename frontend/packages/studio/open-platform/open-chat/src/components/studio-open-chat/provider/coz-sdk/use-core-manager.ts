@@ -22,7 +22,7 @@ import {
   type RequestManagerOptions,
 } from '@coze-common/chat-core';
 
-import { openApiHostByRegionWithToken } from '@/util/env';
+import { getApiBaseUrl } from '@/util/env';
 
 import { useChatAppProps } from '../../store';
 import { useUserInfo } from '../../hooks';
@@ -57,13 +57,14 @@ export const useCoreManager = ({
     useCommonOnAfterResponseHooks(refreshToken);
   const commonErrorResponseHooks = useCommonErrorResponseHooks(refreshToken);
   const messageListAdapter = useMessageList();
-  const { requestManagerOptions } = useChatAppProps();
+  const { requestManagerOptions, chatConfig } = useChatAppProps();
+  const apiBaseUrl = getApiBaseUrl(chatConfig.apiBaseUrl);
   const breakMessageAdapter = useBreakMessage();
   return useMemo(
     () =>
       mergeWith(
         {
-          baseURL: openApiHostByRegionWithToken,
+          baseURL: apiBaseUrl,
           scenes: {
             [RequestScene.SendMessage]: sendMessageAdapter,
             [RequestScene.ClearMessageContext]: clearMessageContextAdapter,
@@ -90,6 +91,8 @@ export const useCoreManager = ({
       clearHistoryAdapter,
       commonOnBeforeRequestHooks,
       commonOnAfterResponseHooks,
+      apiBaseUrl,
+      requestManagerOptions,
     ],
   );
 };

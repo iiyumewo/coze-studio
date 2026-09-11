@@ -25,6 +25,8 @@ import {
 } from '@coze-studio/open-chat/types';
 
 export interface CozeChatOptions {
+  /** API 请求地址，未设置时使用当前宿主地址。 */
+  apiBaseUrl?: string;
   config: {
     /** @deprecated 该使用方式已废弃，请使用botId   */
     bot_id?: string;
@@ -43,6 +45,7 @@ export interface CozeChatOptions {
   };
   auth?: AuthProps;
   userInfo?: OpenUserInfo;
+  onInitStateChange?: (status: 'initSuccess' | 'initFail') => void;
   ui?: UiProps;
   /** @deprecated 该使用方式已废弃，请使用ui属性对ui进行配置 */
   el?: HTMLElement;

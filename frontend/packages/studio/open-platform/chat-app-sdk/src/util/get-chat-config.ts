@@ -31,6 +31,7 @@ export const getChatConfig = (
     chatConfig: {
       type: config?.type || ChatType.BOT,
       bot_id: (config?.botId ?? config?.bot_id) || '',
+      apiBaseUrl: cozeChatOption.apiBaseUrl,
       appInfo: config?.appInfo,
       botInfo: config?.botInfo,
       conversation_id: nanoid(),

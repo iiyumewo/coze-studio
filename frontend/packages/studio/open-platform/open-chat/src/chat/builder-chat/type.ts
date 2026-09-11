@@ -73,6 +73,8 @@ export interface IEventCallbacks {
   onThemeChange?: (theme: 'bg-theme' | 'light') => void;
 }
 export interface IBuilderChatProps {
+  /** API 请求地址，未设置时使用当前宿主地址。 */
+  apiBaseUrl?: string;
   workflow: IWorkflow;
   project: IProject;
   spaceId?: string;

@@ -17,6 +17,7 @@
 import { RouterProvider } from 'react-router-dom';
 import { type FC, useEffect, useState } from 'react';
 
+import { Language } from '@coze-studio/open-chat/types';
 import { initI18nInstance, I18n } from '@coze-arch/i18n/raw';
 import { I18nProvider } from '@coze-arch/i18n/i18n-provider';
 
@@ -26,7 +27,7 @@ const DevApp: FC = () => {
   const [i18nReady, setI18nReady] = useState(false);
 
   useEffect(() => {
-    initI18nInstance().then(() => setI18nReady(true));
+    initI18nInstance({ lng: Language.ZH_CN }).then(() => setI18nReady(true));
   }, []);
 
   if (!i18nReady) {

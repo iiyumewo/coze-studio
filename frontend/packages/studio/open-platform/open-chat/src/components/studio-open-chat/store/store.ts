@@ -19,9 +19,9 @@ import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
 import { produce } from 'immer';
-import { type Conversation, type CozeAPI } from '@coze/api';
 import { type ShortCutCommand } from '@coze-common/chat-area-plugins-chat-shortcuts';
 import { type MixInitResponse } from '@coze-common/chat-area';
+import { type Conversation, type CozeAPI } from '@coze/api';
 
 import { type SDKInitError } from '@/util/error';
 import { getStorageKey, LocalStorageKey, storageUtil } from '@/util';
@@ -309,7 +309,21 @@ export const createChatStore = (
               if (operate === 'replace') {
                 s.conversations = conversations;
               } else if (operate === 'add') {
-                s.conversations = [...s.conversations, ...conversations];
+                conversations.forEach(conversation => {
+                  const index = s.conversations.findIndex(
+                    item => item.id === conversation.id,
+                  );
+                  if (index === -1) {
+                    s.conversations.push(conversation);
+                    return;
+                  }
+                  const currentConversation = s.conversations[index];
+                  s.conversations[index] = {
+                    ...currentConversation,
+                    ...conversation,
+                    name: conversation.name ?? currentConversation.name,
+                  };
+                });
               } else if (operate === 'remove') {
                 conversations.forEach(conversation => {
                   const index = s.conversations.findIndex(

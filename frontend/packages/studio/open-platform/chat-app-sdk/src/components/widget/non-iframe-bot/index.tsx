@@ -56,6 +56,7 @@ export const NonIframeBot: FC<
         chatConfig={iframeParams.chatConfig}
         headerExtra={headerExtra}
         layout={layout}
+        onInitStateChange={props.client.options.onInitStateChange}
         style={{
           height: '100%',
         }}

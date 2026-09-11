@@ -21,7 +21,7 @@ import { type SceneConfig } from '@coze-common/chat-core';
 import { type UserSenderInfo } from '@coze-common/chat-area';
 import i18n from '@coze-arch/i18n/intl';
 
-import { openApiHostByRegionWithToken } from '@/util/env';
+import { getApiBaseUrl } from '@/util/env';
 import { catchParse } from '@/util';
 import {
   useChatAppProps,
@@ -55,7 +55,7 @@ export const useSendMessageAdapter = (
         requestConfig => {
           const messageBody: Record<string, string> =
             catchParse(requestConfig.body) || {};
-          const url = `${openApiHostByRegionWithToken}/v3/chat?conversation_id=${messageBody.conversation_id}`;
+          const url = `${getApiBaseUrl(refChatConfig.current.apiBaseUrl)}/v3/chat?conversation_id=${messageBody.conversation_id}`;
           const body = messageConverterToSdk.convertRequestBody({
             body: requestConfig.body,
             userInfo,

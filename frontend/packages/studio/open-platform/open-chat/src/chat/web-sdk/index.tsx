@@ -62,6 +62,7 @@ const CozeChat: FC<WebSdkChatProps> = props => {
     chatConfig,
     userInfo,
     style,
+    onInitStateChange,
     onImageClick,
     onThemeChange,
   } = props;
@@ -92,6 +93,7 @@ const CozeChat: FC<WebSdkChatProps> = props => {
     },
     layout,
     userInfo,
+    onInitStateChange,
     initErrorFallbackFC: ErrorFallback,
     onImageClick,
   };

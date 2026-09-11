@@ -30,21 +30,20 @@ import { ChatNonIframe } from './chat-non-iframe';
 
 import styles from './index.module.less';
 
-const ChatSlot: FC<
-  ChatContentProps & { isNewCreated: boolean }
-  // eslint-disable-next-line complexity
-> = ({ client, isNewCreated }) => {
-  const { chatVisible, setChatVisible, layout, themeType } =
-    useGlobalStore(
-      useShallow(s => ({
-        layout: s.layout,
-        setIframe: s.setIframe,
-        senderName: s.senderName,
-        chatVisible: s.chatVisible,
-        setChatVisible: s.setChatVisible,
-        themeType: s.themeType,
-      })),
-    );
+const ChatSlot: FC<ChatContentProps & { isNewCreated: boolean }> = ({
+  client,
+  isNewCreated,
+}) => {
+  const { chatVisible, setChatVisible, layout, themeType } = useGlobalStore(
+    useShallow(s => ({
+      layout: s.layout,
+      setIframe: s.setIframe,
+      senderName: s.senderName,
+      chatVisible: s.chatVisible,
+      setChatVisible: s.setChatVisible,
+      themeType: s.themeType,
+    })),
+  );
   const {
     base: baseConf,
     chatBot: chatBotConf,
@@ -54,7 +53,9 @@ const ChatSlot: FC<
   const zIndex = baseConf?.zIndex;
   const zIndexStyle = getCssVars({ zIndex });
   const width =
-    layout === Layout.MOBILE ? undefined : chatBotConf?.width || 460;
+    layout === Layout.MOBILE
+      ? undefined
+      : (chatBotConf?.width ?? (isNewCreated ? 460 : '100%'));
   if (!chatVisible) {
     // 不显示chat框
     return null;
@@ -81,7 +82,7 @@ const ChatSlot: FC<
           themeType={themeType === 'bg-theme' ? 'light' : 'dark'}
         />
       ) : null}
-        <ChatNonIframe client={client} />
+      <ChatNonIframe client={client} />
     </div>
   );
 };

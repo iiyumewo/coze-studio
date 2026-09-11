@@ -65,7 +65,7 @@ interface ChatBotUiProps {
   isNeedConversationAdd?: boolean; // 是否需要会话添加，同时有会话列表的功能，默认是 false
   feedback?: FeedbackConfig; //
   // 仅影响chat框的外部框架，不影响内部显示的属性
-  width?: number;
+  width?: number | string;
   el?: HTMLElement;
   onHide?: () => void; // 当chat聊天框隐藏时，触发该事件
   onShow?: () => void; // 当chat聊天框显示时，触发该事件
@@ -102,6 +102,8 @@ export interface FooterConfig {
 export interface CozeChatConfig {
   type?: ChatType; // 默认是bot
   bot_id?: string;
+  /** API 请求地址，未设置时使用当前宿主地址。 */
+  apiBaseUrl?: string;
   appInfo?: AppInfo;
   botInfo?: BotInfo;
   source: OpenApiSource;

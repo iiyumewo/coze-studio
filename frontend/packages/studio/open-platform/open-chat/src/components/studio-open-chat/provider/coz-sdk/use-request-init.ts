@@ -22,9 +22,10 @@ import {
   type MixInitResponse,
 } from '@coze-common/chat-area';
 import i18n from '@coze-arch/i18n/intl';
-import { type BotInfo, type CozeAPI } from '@coze/api';
+import { type BotInfo, type Conversation, type CozeAPI } from '@coze/api';
 
 import { type OpenRequestInit, EInputMode } from '@/types/props';
+import { ChatType } from '@/types/client';
 
 import { useChatAppProps, useChatAppStore } from '../../store';
 import { useUserInfo } from '../../hooks';
@@ -306,6 +307,10 @@ export const useRequestInit = () => {
   const updateShortcuts = useChatAppStore(s => s.updateShortcuts);
   const setIsStartBotVoiceCall = useChatAppStore(s => s.setIsStartBotVoiceCall);
   const updateBackgroundInfo = useChatAppStore(s => s.updateBackgroundInfo);
+  const updateCurrentConversationInfo = useChatAppStore(
+    s => s.updateCurrentConversationInfo,
+  );
+  const updateConversations = useChatAppStore(s => s.updateConversations);
 
   const getMessageListByPairs = useGetMessageListByPairs();
 
@@ -340,6 +345,26 @@ export const useRequestInit = () => {
             userInfo,
           }),
         ]);
+      if (
+        chatConfig.ui?.conversations?.isNeed &&
+        chatConfig.type !== ChatType.APP &&
+        requestDataConversationInfo.conversationId
+      ) {
+        const timestamp = Math.floor(Date.now() / 1000);
+        const conversation: Conversation = {
+          id: requestDataConversationInfo.conversationId,
+          last_section_id: requestDataConversationInfo.lastSectionId,
+          created_at: timestamp,
+          updated_at: timestamp,
+          meta_data: {},
+        };
+        updateCurrentConversationInfo({
+          ...conversation,
+          conversationListVisible: true,
+          isLargeWidth: true,
+        });
+        updateConversations([conversation], 'add');
+      }
       const prologue = (requestDataBotInfo.prologue || '').replaceAll(
         '{{user_name}}',
         userInfo?.nickname || '',
@@ -384,6 +409,14 @@ export const useRequestInit = () => {
         setInitError({ code: -1, msg: '' });
       }
     }
-  }, [botId, cozeApiSdk, defaultHistoryMessage, onDefaultHistoryClear]);
+  }, [
+    botId,
+    chatConfig,
+    cozeApiSdk,
+    defaultHistoryMessage,
+    onDefaultHistoryClear,
+    updateConversations,
+    updateCurrentConversationInfo,
+  ]);
   return requestToInit;
 };

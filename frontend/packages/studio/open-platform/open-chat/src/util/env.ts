@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { openApiHostByRegionWithToken } from '@coze-studio/open-env-adapter';
+
 export {
   openApiHostByRegion,
   openApiHostByRegionWithToken,
@@ -22,3 +24,6 @@ export {
   getOpenSDKPath,
   eventMeta,
 } from '@coze-studio/open-env-adapter';
+
+export const getApiBaseUrl = (apiBaseUrl?: string) =>
+  apiBaseUrl?.trim().replace(/\/+$/, '') || openApiHostByRegionWithToken;
