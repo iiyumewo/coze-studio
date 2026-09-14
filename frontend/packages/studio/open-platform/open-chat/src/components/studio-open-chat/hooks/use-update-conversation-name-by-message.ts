@@ -21,6 +21,7 @@ import { isEqual } from 'lodash-es';
 import { useChatAreaStoreSet } from '@coze-common/chat-area';
 
 import { useChatAppStore } from '../store';
+import { getConversationName } from './conversation-name';
 
 export const useUpdateConversationNameByMessage = () => {
   const currentConversationNameRef = useRef<string>();
@@ -43,10 +44,10 @@ export const useUpdateConversationNameByMessage = () => {
 
   useEffect(() => {
     const message = messages[messages.length - 1];
-    const name = message?.content.slice(0, 100);
+    const name = getConversationName(message);
     if (message && !currentConversationNameRef.current) {
       updateCurrentConversationNameByMessage(name);
       currentConversationNameRef.current = name;
     }
-  }, [messages]);
+  }, [messages, updateCurrentConversationNameByMessage]);
 };

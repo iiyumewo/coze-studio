@@ -1,6 +1,7 @@
 .conversation-item {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .conversation-item-time {
@@ -18,6 +19,8 @@
   padding: 4px 8px;
   align-items: center;
   align-self: stretch;
+  min-width: 0;
+  overflow: hidden;
   border-radius: var(--mini, 5px); /* 兼容 iOS/Safari/微信 */
   user-select: none;
 }

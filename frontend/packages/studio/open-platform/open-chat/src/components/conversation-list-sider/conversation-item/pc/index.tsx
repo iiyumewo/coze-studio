@@ -70,6 +70,7 @@ export const PcConversationItem = ({
         <Typography.Text
           style={{
             flex: 1,
+            minWidth: 0,
           }}
           ellipsis={{
             showTooltip: {

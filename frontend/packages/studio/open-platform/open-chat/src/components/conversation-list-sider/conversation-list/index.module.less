@@ -1,8 +1,12 @@
 .conversations {
   display: flex;
   flex-direction: column;
+  flex: 0 0 320px;
+  width: 320px;
   min-width: 320px;
+  max-width: 320px;
   height: 100%;
+  overflow: hidden;
 }
 
 .conversations-header {
@@ -30,11 +34,13 @@
   gap: 4px;
   overflow-y: auto;
   flex: 1;
+  min-width: 0;
   margin-bottom: 10px;
 }
 
 .conversations-list-group {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   padding: 0 8px;
 }
