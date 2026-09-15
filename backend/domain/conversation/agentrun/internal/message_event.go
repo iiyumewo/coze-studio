@@ -32,7 +32,6 @@ import (
 	crossmessage "github.com/coze-dev/coze-studio/backend/crossdomain/message"
 
 	singleagent "github.com/coze-dev/coze-studio/backend/crossdomain/agent/model"
-	agentrun "github.com/coze-dev/coze-studio/backend/crossdomain/agentrun/model"
 	message "github.com/coze-dev/coze-studio/backend/crossdomain/message/model"
 	crossworkflow "github.com/coze-dev/coze-studio/backend/crossdomain/workflow"
 	"github.com/coze-dev/coze-studio/backend/domain/conversation/agentrun/entity"
@@ -227,12 +226,6 @@ func (mh *MessageEventHandler) handlerAnswer(ctx context.Context, msg *entity.Ch
 		msg.Ext[string(msgEntity.MessageExtKeyToken)] = strconv.FormatInt(usage.TotalCount, 10)
 		msg.Ext[string(msgEntity.MessageExtKeyInputTokens)] = strconv.FormatInt(usage.InputTokens, 10)
 		msg.Ext[string(msgEntity.MessageExtKeyOutputTokens)] = strconv.FormatInt(usage.OutputTokens, 10)
-
-		rtDependence.Usage = &agentrun.Usage{
-			LlmPromptTokens:     usage.InputTokens,
-			LlmCompletionTokens: usage.OutputTokens,
-			LlmTotalTokens:      usage.TotalCount,
-		}
 	}
 
 	if _, ok := msg.Ext[string(msgEntity.MessageExtKeyTimeCost)]; !ok {

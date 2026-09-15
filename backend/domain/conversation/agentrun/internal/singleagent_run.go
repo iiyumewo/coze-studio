@@ -27,7 +27,6 @@ import (
 
 	crossagent "github.com/coze-dev/coze-studio/backend/crossdomain/agent"
 	singleagent "github.com/coze-dev/coze-studio/backend/crossdomain/agent/model"
-	agentrun "github.com/coze-dev/coze-studio/backend/crossdomain/agentrun/model"
 	crossmessage "github.com/coze-dev/coze-studio/backend/crossdomain/message"
 	message "github.com/coze-dev/coze-studio/backend/crossdomain/message/model"
 	"github.com/coze-dev/coze-studio/backend/domain/conversation/agentrun/entity"
@@ -132,13 +131,7 @@ func (art *AgentRuntime) push(ctx context.Context, mainChan chan *entity.AgentRe
 		switch chunk.EventType {
 		case message.MessageTypeFunctionCall:
 			if chunk.FuncCall != nil && chunk.FuncCall.ResponseMeta != nil {
-				if usage := handlerUsage(chunk.FuncCall.ResponseMeta); usage != nil {
-					art.SetUsage(&agentrun.Usage{
-						LlmPromptTokens:     usage.InputTokens,
-						LlmCompletionTokens: usage.OutputTokens,
-						LlmTotalTokens:      usage.TotalCount,
-					})
-				}
+				art.AddUsageExt(handlerUsage(chunk.FuncCall.ResponseMeta))
 			}
 			err = mh.handlerFunctionCall(ctx, chunk, art)
 			if err != nil {
@@ -167,6 +160,7 @@ func (art *AgentRuntime) push(ctx context.Context, mainChan chan *entity.AgentRe
 		case message.MessageTypeToolMidAnswer:
 			fullMidAnswerContent := bytes.NewBuffer([]byte{})
 			var usage *msgEntity.UsageExt
+			var countedUsage *msgEntity.UsageExt
 			toolMidAnswerMsg, cErr := preCreateAnswer(ctx, art)
 
 			if cErr != nil {
@@ -224,6 +218,10 @@ func (art *AgentRuntime) push(ctx context.Context, mainChan chan *entity.AgentRe
 					sendMidAnswerMsg := buildSendMsg(ctx, toolMidAnswerMsg, false, art)
 					sendMidAnswerMsg.Content = fullMidAnswerContent.String()
 					fullMidAnswerContent.Reset()
+					if usage != nil && usage != countedUsage {
+						art.AddUsageExt(usage)
+						countedUsage = usage
+					}
 					hfErr := mh.handlerAnswer(ctx, sendMidAnswerMsg, usage, art, toolMidAnswerMsg)
 					if hfErr != nil {
 						err = hfErr
@@ -251,6 +249,7 @@ func (art *AgentRuntime) push(ctx context.Context, mainChan chan *entity.AgentRe
 
 						answer := buildSendMsg(ctx, toolAsAnswerMsg, false, art)
 						answer.Content = fullContent.String()
+						art.AddUsageExt(usage)
 						hfErr := mh.handlerAnswer(ctx, answer, usage, art, toolAsAnswerMsg)
 						if hfErr != nil {
 							err = hfErr
@@ -289,6 +288,7 @@ func (art *AgentRuntime) push(ctx context.Context, mainChan chan *entity.AgentRe
 						}
 						answer := buildSendMsg(ctx, modelAnswerMsg, false, art)
 						answer.Content = fullContent.String()
+						art.AddUsageExt(usage)
 						hfErr := mh.handlerAnswer(ctx, answer, usage, art, modelAnswerMsg)
 						if hfErr != nil {
 							err = hfErr

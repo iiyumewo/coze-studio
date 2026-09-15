@@ -66,6 +66,29 @@ func (rd *AgentRuntime) GetUsage() *agentrun.Usage {
 	return rd.Usage
 }
 
+func (rd *AgentRuntime) AddUsage(usage *agentrun.Usage) {
+	if usage == nil {
+		return
+	}
+	if rd.Usage == nil {
+		rd.Usage = &agentrun.Usage{}
+	}
+	rd.Usage.LlmPromptTokens += usage.LlmPromptTokens
+	rd.Usage.LlmCompletionTokens += usage.LlmCompletionTokens
+	rd.Usage.LlmTotalTokens += usage.LlmTotalTokens
+}
+
+func (rd *AgentRuntime) AddUsageExt(usage *msgEntity.UsageExt) {
+	if usage == nil {
+		return
+	}
+	rd.AddUsage(&agentrun.Usage{
+		LlmPromptTokens:     usage.InputTokens,
+		LlmCompletionTokens: usage.OutputTokens,
+		LlmTotalTokens:      usage.TotalCount,
+	})
+}
+
 func (rd *AgentRuntime) SetRunMeta(arm *entity.AgentRunMeta) {
 	rd.RunMeta = arm
 }
