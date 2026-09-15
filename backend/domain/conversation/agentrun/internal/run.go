@@ -175,7 +175,7 @@ func (art *AgentRuntime) Run(ctx context.Context) (err error) {
 				Code: errno.ErrConversationAgentRunError,
 				Msg:  err.Error(),
 			}
-			art.RunProcess.StepToFailed(ctx, srRecord, art.SW)
+			art.RunProcess.StepToFailed(ctx, srRecord, art.SW, art.GetUsage())
 			return
 		}
 		art.RunProcess.StepToComplete(ctx, srRecord, art.SW, art.GetUsage())

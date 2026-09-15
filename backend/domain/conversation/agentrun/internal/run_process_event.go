@@ -89,11 +89,12 @@ func (r *RunProcess) StepToComplete(ctx context.Context, srRecord *entity.ChunkR
 
 	r.event.SendStreamDoneEvent(sw)
 }
-func (r *RunProcess) StepToFailed(ctx context.Context, srRecord *entity.ChunkRunItem, sw *schema.StreamWriter[*entity.AgentRunResponse]) {
+func (r *RunProcess) StepToFailed(ctx context.Context, srRecord *entity.ChunkRunItem, sw *schema.StreamWriter[*entity.AgentRunResponse], usage *agentrun.Usage) {
 
 	nowTime := time.Now().UnixMilli()
 	updateMeta := &entity.UpdateMeta{
 		Status:    entity.RunStatusFailed,
+		Usage:     usage,
 		UpdatedAt: nowTime,
 		FailedAt:  nowTime,
 		LastError: srRecord.Error,
