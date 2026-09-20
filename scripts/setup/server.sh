@@ -87,6 +87,8 @@ mkdir -p "$CONFIG_DIR"
 echo "📑 Copying plugin configuration files..."
 
 cp -r "$BACKEND_DIR/conf" "$RESOURCES_DIR"
+rm -rf "$RESOURCES_DIR/skill-runtime"
+cp -r "$BACKEND_DIR/skill-runtime" "$RESOURCES_DIR"
 cp -r "$BACKEND_DIR/static" "$RESOURCES_DIR"
 
 for arg in "$@"; do

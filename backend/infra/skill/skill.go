@@ -67,7 +67,7 @@ func DefaultDependencyRoot() string {
 }
 
 func DefaultRequirementsPath() string {
-	return filepath.Join(fileutil.GetWorkingDirectory(), "resources", "conf", "skill-runtime", "python-requirements.txt")
+	return filepath.Join(fileutil.GetWorkingDirectory(), "resources", "skill-runtime", "python-requirements.txt")
 }
 
 func DefaultRuntimeRoot() string {

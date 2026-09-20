@@ -258,14 +258,14 @@ fingerprint 使用两层 SHA-256：先计算 requirements 文件原始字节的 
 - 依赖不上传 MinIO，也不安装到宿主机系统 Python；只写入受控 runtime 目录或 Docker volume
 - builder 与执行容器必须使用同一个镜像 digest，保证 Python、glibc、CPU 架构一致
 
-第一版配置项：`COZE_SKILL_RUNNER_REQUIREMENTS`（默认 `<backend working directory>/resources/conf/skill-runtime/python-requirements.txt`）、`COZE_SKILL_RUNNER_DEPENDENCY_ROOT`（默认 `<backend working directory>/runtime/skill-deps`）、`COZE_SKILL_RUNNER_PIP_MIRROR`（默认清华 PyPI 源 `https://pypi.tuna.tsinghua.edu.cn/simple`）、`COZE_SKILL_RUNNER_BUILD_NETWORK` 和 `COZE_SKILL_RUNNER_DEPENDENCY_VERSIONS_TO_KEEP`（默认 `2`，保留 current + 一个旧版本）。后端启动时 requirements 文件不存在或为空则跳过构建。`BUILD_NETWORK` 默认仅为本地开发便利，生产环境必须配置只允许访问 pip 镜像的专用网络。
+第一版配置项：`COZE_SKILL_RUNNER_REQUIREMENTS`（默认 `<backend working directory>/resources/skill-runtime/python-requirements.txt`）、`COZE_SKILL_RUNNER_DEPENDENCY_ROOT`（默认 `<backend working directory>/runtime/skill-deps`）、`COZE_SKILL_RUNNER_PIP_MIRROR`（默认清华 PyPI 源 `https://pypi.tuna.tsinghua.edu.cn/simple`）、`COZE_SKILL_RUNNER_BUILD_NETWORK` 和 `COZE_SKILL_RUNNER_DEPENDENCY_VERSIONS_TO_KEEP`（默认 `2`，保留 current + 一个旧版本）。后端启动时 requirements 文件不存在或为空则跳过构建。`BUILD_NETWORK` 默认仅为本地开发便利，生产环境必须配置只允许访问 pip 镜像的专用网络。
 
 **明确不做**：不根据 Skill 中的 `import` 自动推导依赖；不为每个 Skill 维护独立环境；不在执行容器中联网安装。
 
 **仓库布局与实际启动行为（Phase 1 已落地）**：
 
-- 全局清单纳入仓库的 `backend/conf/skill-runtime/python-requirements.txt`，当前示例仅包含 `requests==2.32.4`。Skill 包内的 `requirements.txt` 不读取、不合并，也不能由 Skill 作者追加依赖。
-- `make debug` 会把 `backend/conf` 复制到 `bin/resources/conf`；因此本地默认清单路径为 `bin/resources/conf/skill-runtime/python-requirements.txt`。生产镜像按同样规则将其放在 `/app/resources/conf/skill-runtime/python-requirements.txt`。
+- 全局清单纳入仓库的 `backend/skill-runtime/python-requirements.txt`，当前示例仅包含 `requests==2.32.4`。Skill 包内的 `requirements.txt` 不读取、不合并，也不能由 Skill 作者追加依赖。
+- `backend/conf` 是会被生产环境整体覆盖的动态资源目录，requirements 不放在其中。`make debug` 会把 `backend/skill-runtime` 复制到 `bin/resources/skill-runtime`；生产镜像将其放在 `/app/resources/skill-runtime/python-requirements.txt`，不受 `/app/resources/conf` 挂载影响。
 - 后端在 `application.Init` 的基础设施初始化之前执行依赖准备。Docker Runner 才执行 builder；选择 `local` Runner 时跳过构建，但本地执行仍会尝试把 `current` 目录加入 `PYTHONPATH`。
 - 默认源固定为清华 PyPI 源；只有显式设置 `COZE_SKILL_RUNNER_PIP_MIRROR` 才覆盖它，不继承宿主进程的 `PIP_INDEX_URL`。因此启动环境中的其他全局 pip 配置不会悄悄改变依赖来源。
 - 当前默认 `COZE_SKILL_RUNNER_BUILD_NETWORK=bridge` 只服务本地开发便利。生产部署必须改成仅允许访问受控 pip 镜像的网络；清华公共源适合作为默认下载源，不等同于生产包白名单或私有镜像治理。
@@ -903,3 +903,4 @@ Dify 未使用目录，而是建立了 Workspace Binding 抽象（`api/services/
 | 2026-09-18（复审） | 通读复审并回代码逐条核对。**发现一处设计矛盾**：4.7「run 末上传」与 4.10「file_key 走工具返回值」不可同时成立，且工具返回值持久化后不可回填；补写推荐解法「file_key 预分配 + pending/ready 状态机」及两个备选（4.7 末、新增 T26）。新增 2.9：核实 runID 在执行链 5 层结构体上均不可达，据此修正 T3 的定位（是跨 5 层字段透传而非纯路径设计），并否决「`BuildAgent` 内生成 UUID」的捷径（resume 会变）；同时指出「收尾端有 runID、执行端没有」这一不对称。补 4.2 中断态缺口（D12 只覆盖三种终态，中断两头不讨好）。新增 4.13 问题 B 的分阶段实施与代码触点（B1-B5），补齐此前只有问题 A 有阶段计划的空缺。2.2 补 chown 与可写性事实、2.3 补 `script_run` 现描述与本设计冲突。修正 4.2 对路径格式的错误交叉引用（原写 T13，应为 T3）、删除 T2 备注中失效的「原 T3」。新增 T27-T29 |
 | 2026-09-18（依赖方案定稿） | 依赖方案从「按 Skill 发布时构建 `.deps`」改为「管理员维护全局 requirements，后端启动按 fingerprint 校验，变化时由独立 builder 容器构建到受控目录，执行容器只读挂载单一 current 环境」。确认第一版不上传 MinIO、不做按 Skill 多版本激活、不根据 import 自动推导依赖；补充 D26-D27，T14 改为已确认。 |
 | 2026-09-20（Phase 1 实现与验证） | 将全局清单固定到仓库 `backend/conf/skill-runtime/python-requirements.txt`，明确忽略 Skill 包内 `requirements.txt`；实现后端启动时 builder、`versions/current` 原子切换、manifest、默认保留 2 个版本和执行期只读挂载。默认 pip 源固定为清华源，仅显式 `COZE_SKILL_RUNNER_PIP_MIRROR` 可覆盖，避免继承宿主 `PIP_INDEX_URL`。完成针对性 Go 测试、Docker 集成测试、`go vet` 与 `8888` 前端真实 Skill 调用验证；补充公共镜像与生产私有镜像治理的边界。 |
+| 2026-09-20（Phase 1 生产路径修正） | 将全局清单从会被生产整体挂载覆盖的 `backend/conf/skill-runtime` 移到独立的 `backend/skill-runtime`，镜像路径改为 `/app/resources/skill-runtime`；同步更新 Debug 复制脚本和生产环境变量。`/data/hz-agent/coze/runtime` 仍作为 builder 与执行容器共享的运行时目录。 |
