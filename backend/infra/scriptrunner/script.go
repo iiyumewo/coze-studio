@@ -19,11 +19,16 @@ package scriptrunner
 import "context"
 
 type Config struct {
-	SkillsRoot     string
-	WorkspaceRoot  string
-	PythonPath     string
-	TimeoutSeconds int
-	MaxOutputBytes int
+	SkillsRoot               string
+	WorkspaceRoot            string
+	DependencyRoot           string
+	RequirementsPath         string
+	PipMirrorURL             string
+	BuildNetwork             string
+	DependencyVersionsToKeep int
+	PythonPath               string
+	TimeoutSeconds           int
+	MaxOutputBytes           int
 
 	DockerBinary        string
 	DockerImage         string

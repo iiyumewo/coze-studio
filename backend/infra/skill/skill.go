@@ -62,6 +62,14 @@ func DefaultWorkspaceRoot() string {
 	return filepath.Join(fileutil.GetWorkingDirectory(), "runtime", "conversations")
 }
 
+func DefaultDependencyRoot() string {
+	return filepath.Join(fileutil.GetWorkingDirectory(), "runtime", "skill-deps")
+}
+
+func DefaultRequirementsPath() string {
+	return filepath.Join(fileutil.GetWorkingDirectory(), "resources", "conf", "skill-runtime", "python-requirements.txt")
+}
+
 func DefaultRuntimeRoot() string {
 	if root := strings.TrimSpace(os.Getenv("COZE_SKILLS_RUNTIME_ROOT")); root != "" {
 		return root

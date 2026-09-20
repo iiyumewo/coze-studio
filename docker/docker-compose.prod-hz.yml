@@ -3,6 +3,10 @@ name: coze-studio
 services:
   coze-server:
     image: hz-coze-server:latest
+    environment:
+      COZE_SKILL_RUNNER_DEPENDENCY_ROOT: /data/hz-agent/coze/runtime/skill-deps
+      COZE_SKILL_RUNNER_DEPENDENCY_VERSIONS_TO_KEEP: "2"
+      COZE_SKILL_RUNNER_PIP_MIRROR: https://pypi.tuna.tsinghua.edu.cn/simple
     volumes:
       # The server invokes the host Docker Engine to create Skill containers.
       - /var/run/docker.sock:/var/run/docker.sock
