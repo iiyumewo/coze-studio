@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -59,6 +60,18 @@ func TestPrepareDependenciesSkipsMissingRequirements(t *testing.T) {
 		RequirementsPath: filepath.Join(t.TempDir(), "missing-requirements.txt"),
 	})
 	require.NoError(t, err)
+}
+
+func TestDependencyBuildArgsReadsRequirementsFromStdin(t *testing.T) {
+	runner := &Runner{config: scriptrunner.Config{
+		DockerImage:  defaultImage,
+		BuildNetwork: "bridge",
+	}}
+	args := runner.dependencyBuildArgs("container", "/tmp/staging")
+	joined := strings.Join(args, " ")
+	require.Contains(t, joined, "--interactive")
+	require.Contains(t, joined, "-r /dev/stdin")
+	require.NotContains(t, joined, "/input/requirements.txt")
 }
 
 func TestPrepareDependenciesDockerIntegration(t *testing.T) {

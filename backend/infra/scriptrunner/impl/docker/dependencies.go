@@ -137,8 +137,9 @@ func (r *Runner) prepareDependencies(ctx context.Context) error {
 
 	stdout := newLimitedBuffer(1<<20, cancel)
 	stderr := newLimitedBuffer(1<<20, cancel)
-	args := r.dependencyBuildArgs(containerName, requirementsPath, stagingDir)
+	args := r.dependencyBuildArgs(containerName, stagingDir)
 	cmd := exec.CommandContext(buildCtx, r.config.DockerBinary, args...)
+	cmd.Stdin = bytes.NewReader(requirements)
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	if runErr := cmd.Run(); runErr != nil {
@@ -238,9 +239,9 @@ func (r *Runner) cleanupDependencyVersions(ctx context.Context, activeFingerprin
 	}
 }
 
-func (r *Runner) dependencyBuildArgs(containerName, requirementsPath, stagingDir string) []string {
+func (r *Runner) dependencyBuildArgs(containerName, stagingDir string) []string {
 	args := []string{
-		"run", "--rm",
+		"run", "--rm", "--interactive",
 		"--name", containerName,
 		"--pull", "never",
 		"--network", r.buildNetwork(),
@@ -255,7 +256,6 @@ func (r *Runner) dependencyBuildArgs(containerName, requirementsPath, stagingDir
 		"--env", "HOME=/tmp",
 		"--env", "PIP_DISABLE_PIP_VERSION_CHECK=1",
 		"--env", "PIP_NO_CACHE_DIR=1",
-		"--volume", requirementsPath + ":/input/requirements.txt:ro",
 		"--volume", stagingDir + ":" + containerDependencyRoot + ":rw",
 	}
 	if mirror := strings.TrimSpace(r.config.PipMirrorURL); mirror != "" {
@@ -268,7 +268,7 @@ func (r *Runner) dependencyBuildArgs(containerName, requirementsPath, stagingDir
 	// package files are created in the same path used by the execution image.
 	args = append(args,
 		r.config.DockerImage,
-		"python", "-m", "pip", "install", "--no-cache-dir", "--report", filepath.Join(containerDependencyRoot, "pip-report.json"), "--target", containerDependencyRoot, "-r", "/input/requirements.txt",
+		"python", "-m", "pip", "install", "--no-cache-dir", "--report", filepath.Join(containerDependencyRoot, "pip-report.json"), "--target", containerDependencyRoot, "-r", "/dev/stdin",
 	)
 	return args
 }

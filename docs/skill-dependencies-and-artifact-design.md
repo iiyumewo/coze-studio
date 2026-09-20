@@ -290,7 +290,7 @@ fingerprint 使用两层 SHA-256：先计算 requirements 文件原始字节的 
 
 **构建容器的管控要求**：
 
-- requirements 文件只读挂载；输出只写入本次 staging 目录，不挂载整个 runtime 根目录
+- requirements 内容由后端从镜像内读取后通过 stdin 传给 builder；输出只写入本次 staging 目录，不挂载整个 runtime 根目录
 - 网络不可只配 pip 镜像参数了事，须显式封禁云 metadata 地址与其余全部内网地址，仅放行镜像站
 - CPU / 内存 / 磁盘配额，防止单个包撑爆磁盘
 - 非 root、超时、用完销毁；构建容器不挂载 Docker Socket
@@ -904,3 +904,4 @@ Dify 未使用目录，而是建立了 Workspace Binding 抽象（`api/services/
 | 2026-09-18（依赖方案定稿） | 依赖方案从「按 Skill 发布时构建 `.deps`」改为「管理员维护全局 requirements，后端启动按 fingerprint 校验，变化时由独立 builder 容器构建到受控目录，执行容器只读挂载单一 current 环境」。确认第一版不上传 MinIO、不做按 Skill 多版本激活、不根据 import 自动推导依赖；补充 D26-D27，T14 改为已确认。 |
 | 2026-09-20（Phase 1 实现与验证） | 将全局清单固定到仓库 `backend/conf/skill-runtime/python-requirements.txt`，明确忽略 Skill 包内 `requirements.txt`；实现后端启动时 builder、`versions/current` 原子切换、manifest、默认保留 2 个版本和执行期只读挂载。默认 pip 源固定为清华源，仅显式 `COZE_SKILL_RUNNER_PIP_MIRROR` 可覆盖，避免继承宿主 `PIP_INDEX_URL`。完成针对性 Go 测试、Docker 集成测试、`go vet` 与 `8888` 前端真实 Skill 调用验证；补充公共镜像与生产私有镜像治理的边界。 |
 | 2026-09-20（Phase 1 生产路径修正） | 将全局清单从会被生产整体挂载覆盖的 `backend/conf/skill-runtime` 移到独立的 `backend/skill-runtime`，镜像路径改为 `/app/resources/skill-runtime`；同步更新 Debug 复制脚本和生产环境变量。`/data/hz-agent/coze/runtime` 仍作为 builder 与执行容器共享的运行时目录。 |
+| 2026-09-20（Phase 1 builder 输入修正） | builder 不再把后端容器内的 requirements 路径作为宿主 Docker bind mount；后端读取镜像内清单后通过 stdin 传给 builder，builder 使用 `/dev/stdin` 交给 pip。这样生产只需共享 runtime 输出目录，不需要在宿主机额外放置 requirements 文件。 |
