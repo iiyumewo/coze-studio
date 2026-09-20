@@ -76,7 +76,7 @@ func newSkillTools(_ context.Context, conf *skillToolConfig) ([]tool.InvokableTo
 }
 
 const skillReadToolDescription = `Read the complete instructions of a local Skill.
-Call this before using a Skill so you know its available files, scripts, and expected parameters. Use skill_file_read to read referenced files.`
+Call this before using a Skill so you know its available files, scripts, and expected parameters. If the user asks which files or reference documents the Skill contains, answer from this result and do not call skill_file_read just to list or verify filenames. Use skill_file_read only when the actual contents of a referenced file are needed.`
 
 type skillReadInput struct {
 	Skill string `json:"skill" jsonschema:"required,description=The Skill id from the available Skills list"`
@@ -102,7 +102,7 @@ func (t *skillReadTool) Invoke(_ context.Context, input *skillReadInput) (string
 }
 
 const skillFileReadToolDescription = `Read a text file from a local Skill.
-The path is relative to the selected Skill directory. Use this for referenced Markdown, YAML, JSON, or text files. Do not use script_run to read files.`
+The path is relative to the selected Skill directory. Use this only when the actual contents of a specific referenced Markdown, YAML, JSON, or text file are needed for the current task. For questions that only ask which files exist, use skill_read instead. Read only the files relevant to the task; do not read every referenced file by default. Do not use script_run to read files.`
 
 type skillFileReadInput struct {
 	Skill string `json:"skill" jsonschema:"required,description=The Skill id from the available Skills list"`

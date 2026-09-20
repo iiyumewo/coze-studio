@@ -261,7 +261,7 @@ func (c *Catalog) PromptDescription() string {
 	for _, definition := range c.skills {
 		fmt.Fprintf(&builder, "- %s (id: %s): %s\n", definition.Name, definition.ID, definition.Description)
 	}
-	builder.WriteString("When a Skill is relevant, call skill_read with its id to load the full instructions, then use skill_file_read for referenced files before calling script_run.")
+	builder.WriteString("When a Skill is relevant, call skill_read with its id first. If the user only asks which files or reference documents it contains, answer from skill_read and do not call skill_file_read. Use skill_file_read only for the specific referenced file contents needed for the current task, then call script_run only for a .py script.")
 	return builder.String()
 }
 
