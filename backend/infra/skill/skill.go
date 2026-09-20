@@ -30,8 +30,8 @@ import (
 )
 
 const (
-	instructionsFileName    = "SKILL.md"
-	maxInstructionsFileSize = 256 << 10
+	instructionsFileName = "SKILL.md"
+	maxSkillFileSize     = 256 << 10
 )
 
 type Definition struct {
@@ -184,8 +184,8 @@ func (c *Catalog) ReadInstructions(identifier string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("stat skill instructions: %w", err)
 	}
-	if info.Size() > maxInstructionsFileSize {
-		return "", fmt.Errorf("skill instructions exceed %d bytes", maxInstructionsFileSize)
+	if info.Size() > maxSkillFileSize {
+		return "", fmt.Errorf("skill instructions exceed %d bytes", maxSkillFileSize)
 	}
 	if err = validatePathWithinRoot(c.root, path); err != nil {
 		return "", err
@@ -197,20 +197,57 @@ func (c *Catalog) ReadInstructions(identifier string) (string, error) {
 	return string(content), nil
 }
 
+func (c *Catalog) ReadFile(identifier, filePath string) (string, error) {
+	path, err := c.resolveFilePath(identifier, filePath, "file")
+	if err != nil {
+		return "", err
+	}
+	path = filepath.Join(c.root, path)
+	info, err := os.Stat(path)
+	if err != nil {
+		return "", fmt.Errorf("stat Skill file: %w", err)
+	}
+	if info.IsDir() {
+		return "", errors.New("Skill file path must point to a file")
+	}
+	if info.Size() > maxSkillFileSize {
+		return "", fmt.Errorf("Skill file exceeds %d bytes", maxSkillFileSize)
+	}
+	if err = validatePathWithinRoot(c.root, path); err != nil {
+		return "", err
+	}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("read Skill file: %w", err)
+	}
+	return string(content), nil
+}
+
 func (c *Catalog) ResolveScriptPath(identifier, scriptPath string) (string, error) {
+	path, err := c.resolveFilePath(identifier, scriptPath, "script")
+	if err != nil {
+		return "", err
+	}
+	if !strings.EqualFold(filepath.Ext(path), ".py") {
+		return "", errors.New("script path must have a .py extension")
+	}
+	return path, nil
+}
+
+func (c *Catalog) resolveFilePath(identifier, filePath, pathType string) (string, error) {
 	definition, ok := c.Find(identifier)
 	if !ok {
 		return "", fmt.Errorf("skill %q was not found", identifier)
 	}
-	if strings.TrimSpace(scriptPath) == "" {
-		return "", errors.New("script path is required")
+	if strings.TrimSpace(filePath) == "" {
+		return "", fmt.Errorf("%s path is required", pathType)
 	}
-	if filepath.IsAbs(scriptPath) {
-		return "", errors.New("script path must be relative to the skill directory")
+	if filepath.IsAbs(filePath) {
+		return "", fmt.Errorf("%s path must be relative to the skill directory", pathType)
 	}
-	cleanPath := filepath.Clean(scriptPath)
+	cleanPath := filepath.Clean(filePath)
 	if cleanPath == "." || cleanPath == ".." || strings.HasPrefix(cleanPath, ".."+string(os.PathSeparator)) {
-		return "", errors.New("script path escapes the skill directory")
+		return "", fmt.Errorf("%s path escapes the skill directory", pathType)
 	}
 	return filepath.Join(definition.RelativePath, cleanPath), nil
 }
@@ -224,7 +261,7 @@ func (c *Catalog) PromptDescription() string {
 	for _, definition := range c.skills {
 		fmt.Fprintf(&builder, "- %s (id: %s): %s\n", definition.Name, definition.ID, definition.Description)
 	}
-	builder.WriteString("When a Skill is relevant, call skill_read with its id to load the full instructions before calling script_run.")
+	builder.WriteString("When a Skill is relevant, call skill_read with its id to load the full instructions, then use skill_file_read for referenced files before calling script_run.")
 	return builder.String()
 }
 
@@ -242,8 +279,8 @@ func loadDefinition(root, id string) (*Definition, error) {
 		}
 		return nil, fmt.Errorf("stat skill %q instructions: %w", id, err)
 	}
-	if info.Size() > maxInstructionsFileSize {
-		return nil, fmt.Errorf("skill %q instructions exceed %d bytes", id, maxInstructionsFileSize)
+	if info.Size() > maxSkillFileSize {
+		return nil, fmt.Errorf("skill %q instructions exceed %d bytes", id, maxSkillFileSize)
 	}
 	content, err := os.ReadFile(path)
 	if err != nil {

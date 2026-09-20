@@ -46,6 +46,8 @@ description: Add two numbers.
 
 Use calculator.py with parameters a and b.
 `), 0o640))
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "calculator", "references"), 0o750))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "calculator", "references", "rules.md"), []byte("# Rules\nUse the reference.\n"), 0o640))
 	require.NoError(t, os.WriteFile(filepath.Join(root, "calculator", "calculator.py"), []byte(`import json
 import sys
 
@@ -68,7 +70,7 @@ print(json.dumps({"sum": params["a"] + params["b"]}))
 		conversationID: 100,
 	})
 	require.NoError(t, err)
-	require.Len(t, tools, 2)
+	require.Len(t, tools, 3)
 
 	readInfo, err := tools[0].Info(context.Background())
 	require.NoError(t, err)
@@ -77,13 +79,24 @@ print(json.dumps({"sum": params["a"] + params["b"]}))
 	require.NoError(t, err)
 	require.Contains(t, readOutput, "calculator.py")
 
-	runInfo, err := tools[1].Info(context.Background())
+	fileReadInfo, err := tools[1].Info(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, "skill_file_read", fileReadInfo.Name)
+	fileOutput, err := tools[1].InvokableRun(context.Background(), `{"skill":"calculator","path":"references/rules.md"}`)
+	require.NoError(t, err)
+	require.Contains(t, fileOutput, "Use the reference")
+
+	runInfo, err := tools[2].Info(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, "script_run", runInfo.Name)
-	runOutput, err := tools[1].InvokableRun(context.Background(), `{"skill":"calculator","script_path":"calculator.py","params":{"a":2,"b":3}}`)
+	runOutput, err := tools[2].InvokableRun(context.Background(), `{"skill":"calculator","script_path":"calculator.py","params":{"a":2,"b":3}}`)
 	require.NoError(t, err)
 	require.Contains(t, runOutput, `"sum": 5`)
 	require.Contains(t, runOutput, "working_directory")
+
+	fileRunOutput, err := tools[2].InvokableRun(context.Background(), `{"skill":"calculator","script_path":"references/rules.md","params":{}}`)
+	require.NoError(t, err)
+	require.Contains(t, fileRunOutput, "must have a .py extension")
 }
 
 func TestSkillToolsReturnsExecutionFailureToModel(t *testing.T) {
@@ -112,7 +125,7 @@ func TestSkillToolsReturnsExecutionFailureToModel(t *testing.T) {
 		conversationID: 101,
 	})
 	require.NoError(t, err)
-	output, err := tools[1].InvokableRun(context.Background(), `{"skill":"broken","script_path":"broken.py","params":{}}`)
+	output, err := tools[2].InvokableRun(context.Background(), `{"skill":"broken","script_path":"broken.py","params":{}}`)
 	require.NoError(t, err)
 	require.Contains(t, output, "Script execution failed")
 	require.True(t, strings.Contains(output, "expected failure"))

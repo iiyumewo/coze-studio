@@ -56,6 +56,13 @@ func newSkillTools(_ context.Context, conf *skillToolConfig) ([]tool.InvokableTo
 		return nil, fmt.Errorf("create skill_read tool: %w", err)
 	}
 
+	fileReadTool, err := utils.InferTool("skill_file_read", skillFileReadToolDescription, (&skillFileReadTool{
+		catalog: conf.catalog,
+	}).Invoke)
+	if err != nil {
+		return nil, fmt.Errorf("create skill_file_read tool: %w", err)
+	}
+
 	scriptTool, err := utils.InferTool("script_run", scriptRunToolDescription, (&scriptRunTool{
 		catalog:        conf.catalog,
 		runner:         runner,
@@ -65,11 +72,11 @@ func newSkillTools(_ context.Context, conf *skillToolConfig) ([]tool.InvokableTo
 		return nil, fmt.Errorf("create script_run tool: %w", err)
 	}
 
-	return []tool.InvokableTool{readTool, scriptTool}, nil
+	return []tool.InvokableTool{readTool, fileReadTool, scriptTool}, nil
 }
 
 const skillReadToolDescription = `Read the complete instructions of a local Skill.
-Call this before using a Skill so you know its available files, scripts, and expected parameters.`
+Call this before using a Skill so you know its available files, scripts, and expected parameters. Use skill_file_read to read referenced files.`
 
 type skillReadInput struct {
 	Skill string `json:"skill" jsonschema:"required,description=The Skill id from the available Skills list"`
@@ -94,9 +101,35 @@ func (t *skillReadTool) Invoke(_ context.Context, input *skillReadInput) (string
 	return fmt.Sprintf("Skill %s (id: %s) instructions:\n%s", definition.Name, definition.ID, instructions), nil
 }
 
+const skillFileReadToolDescription = `Read a text file from a local Skill.
+The path is relative to the selected Skill directory. Use this for referenced Markdown, YAML, JSON, or text files. Do not use script_run to read files.`
+
+type skillFileReadInput struct {
+	Skill string `json:"skill" jsonschema:"required,description=The Skill id from the available Skills list"`
+	Path  string `json:"path" jsonschema:"required,description=The file path relative to the selected Skill directory"`
+}
+
+type skillFileReadTool struct {
+	catalog *skill.Catalog
+}
+
+func (t *skillFileReadTool) Invoke(_ context.Context, input *skillFileReadInput) (string, error) {
+	if input == nil || strings.TrimSpace(input.Skill) == "" {
+		return "Skill id is required", nil
+	}
+	if strings.TrimSpace(input.Path) == "" {
+		return "File path is required", nil
+	}
+	content, err := t.catalog.ReadFile(input.Skill, input.Path)
+	if err != nil {
+		return fmt.Sprintf("Failed to read Skill file: %v", err), nil
+	}
+	return fmt.Sprintf("Skill file %s (%s):\n%s", input.Skill, input.Path, content), nil
+}
+
 const scriptRunToolDescription = `Run a Python script from a local Skill.
-The script_path is relative to the selected Skill directory. Pass script parameters in params as a JSON object.
-Read the Skill instructions with skill_read first. The script runs in the current conversation's working directory, which can be reused by later calls.`
+The script_path must be a .py file relative to the selected Skill directory. Pass script parameters in params as a JSON object.
+Read the Skill instructions with skill_read first, then use skill_file_read for referenced files. The script runs in the current conversation's working directory, which can be reused by later calls.`
 
 type scriptRunInput struct {
 	Skill      string         `json:"skill" jsonschema:"required,description=The Skill id from the available Skills list"`

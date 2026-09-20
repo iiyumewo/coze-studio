@@ -36,6 +36,8 @@ description: Add two numbers.
 
 Use calculator.py with two numeric parameters.
 `), 0o640))
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "calculator", "references"), 0o750))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "calculator", "references", "rules.md"), []byte("# Rules\n\nRead this reference.\n"), 0o640))
 	require.NoError(t, os.MkdirAll(filepath.Join(root, "plain"), 0o750))
 	require.NoError(t, os.WriteFile(filepath.Join(root, "plain", instructionsFileName), []byte("# Plain text skill\n\nRead this file first.\n"), 0o640))
 	require.NoError(t, os.MkdirAll(filepath.Join(root, ".hidden"), 0o750))
@@ -61,10 +63,18 @@ Use calculator.py with two numeric parameters.
 	require.NoError(t, err)
 	require.Contains(t, instructions, "calculator.py")
 
+	content, err := catalog.ReadFile("calculator", "references/rules.md")
+	require.NoError(t, err)
+	require.Contains(t, content, "Read this reference")
+
 	path, err := catalog.ResolveScriptPath("calculator", "scripts/calculator.py")
 	require.NoError(t, err)
 	require.Equal(t, filepath.Join("calculator", "scripts", "calculator.py"), path)
 	_, err = catalog.ResolveScriptPath("calculator", "../outside.py")
+	require.ErrorContains(t, err, "escapes the skill directory")
+	_, err = catalog.ResolveScriptPath("calculator", "references/rules.md")
+	require.ErrorContains(t, err, "must have a .py extension")
+	_, err = catalog.ReadFile("calculator", "../outside.md")
 	require.ErrorContains(t, err, "escapes the skill directory")
 }
 
