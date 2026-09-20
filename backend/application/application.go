@@ -81,6 +81,7 @@ import (
 	progressBarImpl "github.com/coze-dev/coze-studio/backend/infra/document/progressbar/impl/progressbar"
 	"github.com/coze-dev/coze-studio/backend/infra/eventbus"
 	implEventbus "github.com/coze-dev/coze-studio/backend/infra/eventbus/impl"
+	scriptrunnerimpl "github.com/coze-dev/coze-studio/backend/infra/scriptrunner/impl"
 	"github.com/coze-dev/coze-studio/backend/infra/sqlparser"
 	sqlparserImpl "github.com/coze-dev/coze-studio/backend/infra/sqlparser/impl/sqlparser"
 	"github.com/coze-dev/coze-studio/backend/pkg/ctxcache"
@@ -129,6 +130,9 @@ type complexServices struct {
 
 func Init(ctx context.Context) (err error) {
 	ctx = ctxcache.Init(ctx)
+	if err = scriptrunnerimpl.PrepareDependenciesFromEnv(ctx); err != nil {
+		return fmt.Errorf("prepare Skill dependencies: %w", err)
+	}
 	infra, err := appinfra.Init(ctx)
 	if err != nil {
 		return err

@@ -57,6 +57,9 @@ func NewRunner(config scriptrunner.Config) (*Runner, error) {
 	if config.WorkspaceRoot == "" {
 		config.WorkspaceRoot = skill.DefaultWorkspaceRoot()
 	}
+	if config.DependencyRoot == "" {
+		config.DependencyRoot = skill.DefaultDependencyRoot()
+	}
 
 	var err error
 	if config.SkillsRoot, err = filepath.Abs(config.SkillsRoot); err != nil {
@@ -64,6 +67,14 @@ func NewRunner(config scriptrunner.Config) (*Runner, error) {
 	}
 	if config.WorkspaceRoot, err = filepath.Abs(config.WorkspaceRoot); err != nil {
 		return nil, fmt.Errorf("resolve workspace root: %w", err)
+	}
+	if config.DependencyRoot, err = filepath.Abs(config.DependencyRoot); err != nil {
+		return nil, fmt.Errorf("resolve dependency root: %w", err)
+	}
+	if strings.TrimSpace(config.RequirementsPath) != "" {
+		if config.RequirementsPath, err = filepath.Abs(config.RequirementsPath); err != nil {
+			return nil, fmt.Errorf("resolve requirements path: %w", err)
+		}
 	}
 	if config.DockerBinary == "" {
 		config.DockerBinary = "docker"
@@ -132,6 +143,7 @@ func (r *Runner) Run(ctx context.Context, request *scriptrunner.RunRequest) (*sc
 	if err = validateDirectoryWithinRoot(r.config.WorkspaceRoot, workingDir); err != nil {
 		return nil, fmt.Errorf("conversation workspace is invalid: %w", err)
 	}
+	dependencyDir := r.currentDependencyDir()
 	skillDir, err = filepath.EvalSymlinks(skillDir)
 	if err != nil {
 		return nil, fmt.Errorf("resolve skill directory: %w", err)
@@ -161,6 +173,7 @@ func (r *Runner) Run(ctx context.Context, request *scriptrunner.RunRequest) (*sc
 		containerName,
 		skillDir,
 		workingDir,
+		dependencyDir,
 		containerScriptPath,
 		string(paramsJSON),
 	)...)
@@ -212,8 +225,8 @@ func (r *Runner) resolveScript(scriptPath string) (hostScriptPath, skillDir, con
 	return hostScriptPath, skillDir, containerScriptPath, nil
 }
 
-func (r *Runner) dockerArgs(containerName, skillDir, workingDir, scriptPath, paramsJSON string) []string {
-	return []string{
+func (r *Runner) dockerArgs(containerName, skillDir, workingDir, dependencyDir, scriptPath, paramsJSON string) []string {
+	args := []string{
 		"run",
 		"--rm",
 		"--name", containerName,
@@ -234,9 +247,28 @@ func (r *Runner) dockerArgs(containerName, skillDir, workingDir, scriptPath, par
 		"--volume", skillDir + ":" + containerSkillsRoot + ":ro",
 		"--volume", workingDir + ":" + containerWorkspace + ":rw",
 		"--workdir", containerWorkspace,
-		r.config.DockerImage,
-		"python", scriptPath, paramsJSON,
 	}
+	if dependencyDir != "" {
+		args = append(args,
+			"--env", "PYTHONPATH="+containerDependencyRoot,
+			"--volume", dependencyDir+":"+containerDependencyRoot+":ro",
+		)
+	}
+	args = append(args, r.config.DockerImage, "python", scriptPath, paramsJSON)
+	return args
+}
+
+func (r *Runner) currentDependencyDir() string {
+	current := filepath.Join(r.config.DependencyRoot, "current")
+	info, err := os.Stat(current)
+	if err != nil || !info.IsDir() {
+		return ""
+	}
+	resolved, err := filepath.EvalSymlinks(current)
+	if err != nil || validateDirectoryWithinRoot(r.config.DependencyRoot, resolved) != nil {
+		return ""
+	}
+	return resolved
 }
 
 func (r *Runner) executionUser() string {

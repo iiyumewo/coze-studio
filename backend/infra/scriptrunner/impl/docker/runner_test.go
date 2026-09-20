@@ -37,7 +37,7 @@ func TestRunnerDockerArgsUseSandboxRestrictions(t *testing.T) {
 		DockerCPUs:          0.5,
 		DockerPidsLimit:     64,
 	}}
-	args := runner.dockerArgs("sandbox", "/skills/demo", "/work/42", "/opt/skill/main.py", `{}`)
+	args := runner.dockerArgs("sandbox", "/skills/demo", "/work/42", "", "/opt/skill/main.py", `{}`)
 	joined := strings.Join(args, " ")
 	require.Contains(t, joined, "--network none")
 	require.Contains(t, joined, "--pull never")
@@ -48,6 +48,14 @@ func TestRunnerDockerArgsUseSandboxRestrictions(t *testing.T) {
 	require.Contains(t, joined, "/skills/demo:/opt/skill:ro")
 	require.Contains(t, joined, "/work/42:/workspace:rw")
 	require.NotContains(t, joined, "/var/run/docker.sock")
+}
+
+func TestRunnerDockerArgsMountCurrentDependenciesReadOnly(t *testing.T) {
+	runner := &Runner{config: scriptrunner.Config{DockerImage: defaultImage}}
+	args := runner.dockerArgs("sandbox", "/skills/demo", "/work/42", "/runtime/skill-deps/versions/abc", "/opt/skill/main.py", `{}`)
+	joined := strings.Join(args, " ")
+	require.Contains(t, joined, "PYTHONPATH=/opt/skill-deps")
+	require.Contains(t, joined, "/runtime/skill-deps/versions/abc:/opt/skill-deps:ro")
 }
 
 func TestRunnerDockerIntegration(t *testing.T) {

@@ -48,6 +48,9 @@ func NewRunner(config scriptrunner.Config) (*Runner, error) {
 	if config.WorkspaceRoot == "" {
 		config.WorkspaceRoot = skill.DefaultWorkspaceRoot()
 	}
+	if config.DependencyRoot == "" {
+		config.DependencyRoot = skill.DefaultDependencyRoot()
+	}
 
 	var err error
 	if config.SkillsRoot, err = filepath.Abs(config.SkillsRoot); err != nil {
@@ -55,6 +58,9 @@ func NewRunner(config scriptrunner.Config) (*Runner, error) {
 	}
 	if config.WorkspaceRoot, err = filepath.Abs(config.WorkspaceRoot); err != nil {
 		return nil, fmt.Errorf("resolve workspace root: %w", err)
+	}
+	if config.DependencyRoot, err = filepath.Abs(config.DependencyRoot); err != nil {
+		return nil, fmt.Errorf("resolve dependency root: %w", err)
 	}
 	if config.PythonPath == "" {
 		config.PythonPath = fileutil.GetPython3Path()
@@ -109,6 +115,10 @@ func (r *Runner) Run(ctx context.Context, request *scriptrunner.RunRequest) (*sc
 	stderr := newLimitedBuffer(r.config.MaxOutputBytes, cancel)
 	cmd := exec.CommandContext(runCtx, r.config.PythonPath, scriptPath, string(paramsJSON)) // ignore_security_alert RCE
 	cmd.Dir = workingDir
+	cmd.Env = os.Environ()
+	if dependencyEnv := r.dependencyEnv(); dependencyEnv != "" {
+		cmd.Env = setEnv(cmd.Env, "PYTHONPATH", dependencyEnv)
+	}
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 
@@ -129,6 +139,46 @@ func (r *Runner) Run(ctx context.Context, request *scriptrunner.RunRequest) (*sc
 		return response, fmt.Errorf("run script: %w: stderr: %s", runErr, strings.TrimSpace(response.Stderr))
 	}
 	return response, nil
+}
+
+func (r *Runner) dependencyEnv() string {
+	current := filepath.Join(r.config.DependencyRoot, "current")
+	info, err := os.Stat(current)
+	if err != nil || !info.IsDir() {
+		return ""
+	}
+	resolved, err := filepath.EvalSymlinks(current)
+	if err != nil || validateDirectoryWithinRoot(r.config.DependencyRoot, resolved) != nil {
+		return ""
+	}
+	return resolved
+}
+
+func setEnv(env []string, key, value string) []string {
+	prefix := key + "="
+	for i, item := range env {
+		if strings.HasPrefix(item, prefix) {
+			env[i] = prefix + value
+			return env
+		}
+	}
+	return append(env, prefix+value)
+}
+
+func validateDirectoryWithinRoot(root, directory string) error {
+	rootReal, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return err
+	}
+	directoryReal, err := filepath.EvalSymlinks(directory)
+	if err != nil {
+		return err
+	}
+	rel, err := filepath.Rel(rootReal, directoryReal)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return errors.New("path resolves outside the configured root")
+	}
+	return nil
 }
 
 func resolveScriptPath(root, scriptPath string) (string, error) {

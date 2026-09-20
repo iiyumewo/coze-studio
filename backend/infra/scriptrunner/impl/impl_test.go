@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/coze-dev/coze-studio/backend/types/consts"
 )
 
 func TestNewFromEnvRejectsUnknownRunnerType(t *testing.T) {
@@ -33,4 +35,19 @@ func TestNewFromEnvCreatesLocalRunner(t *testing.T) {
 	runner, err := NewFromEnv(t.TempDir())
 	require.NoError(t, err)
 	require.NotNil(t, runner)
+}
+
+func TestConfigFromEnvDefaultsToTsinghuaMirror(t *testing.T) {
+	t.Setenv("PIP_INDEX_URL", "https://pypi.org/simple")
+	t.Setenv(consts.SkillRunnerPipMirror, "")
+
+	config := configFromEnv(t.TempDir())
+	require.Equal(t, defaultPipMirror, config.PipMirrorURL)
+}
+
+func TestConfigFromEnvAllowsExplicitMirror(t *testing.T) {
+	t.Setenv(consts.SkillRunnerPipMirror, "https://mirror.example.com/simple")
+
+	config := configFromEnv(t.TempDir())
+	require.Equal(t, "https://mirror.example.com/simple", config.PipMirrorURL)
 }

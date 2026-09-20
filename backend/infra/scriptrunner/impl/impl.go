@@ -17,6 +17,7 @@
 package impl
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -25,6 +26,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/infra/scriptrunner"
 	dockerrunner "github.com/coze-dev/coze-studio/backend/infra/scriptrunner/impl/docker"
 	localrunner "github.com/coze-dev/coze-studio/backend/infra/scriptrunner/impl/local"
+	"github.com/coze-dev/coze-studio/backend/infra/skill"
 	"github.com/coze-dev/coze-studio/backend/pkg/envkey"
 	"github.com/coze-dev/coze-studio/backend/types/consts"
 )
@@ -32,21 +34,12 @@ import (
 const (
 	RunnerTypeLocal  = "local"
 	RunnerTypeDocker = "docker"
+	defaultPipMirror = "https://pypi.tuna.tsinghua.edu.cn/simple"
 )
 
 func NewFromEnv(skillsRoot string) (scriptrunner.Runner, error) {
 	runnerType := strings.ToLower(strings.TrimSpace(envkey.GetStringD(consts.SkillRunnerType, RunnerTypeDocker)))
-	config := scriptrunner.Config{
-		SkillsRoot:          skillsRoot,
-		WorkspaceRoot:       envkey.GetString(consts.SkillRunnerWorkspaceRoot),
-		TimeoutSeconds:      envkey.GetIntD(consts.SkillRunnerTimeoutSeconds, 60),
-		MaxOutputBytes:      envkey.GetIntD(consts.SkillRunnerMaxOutputBytes, 1<<20),
-		DockerBinary:        envkey.GetStringD(consts.SkillRunnerDockerBinary, "docker"),
-		DockerImage:         envkey.GetStringD(consts.SkillRunnerDockerImage, "python:3.12-slim-bookworm"),
-		DockerMemoryLimitMB: int64(envkey.GetIntD(consts.SkillRunnerDockerMemoryMB, 256)),
-		DockerCPUs:          getFloatD(consts.SkillRunnerDockerCPUs, 0.5),
-		DockerPidsLimit:     int64(envkey.GetIntD(consts.SkillRunnerDockerPidsLimit, 64)),
-	}
+	config := configFromEnv(skillsRoot)
 
 	switch runnerType {
 	case RunnerTypeLocal:
@@ -55,6 +48,33 @@ func NewFromEnv(skillsRoot string) (scriptrunner.Runner, error) {
 		return dockerrunner.NewRunner(config)
 	default:
 		return nil, fmt.Errorf("unsupported skill runner type %q", runnerType)
+	}
+}
+
+func PrepareDependenciesFromEnv(ctx context.Context) error {
+	runnerType := strings.ToLower(strings.TrimSpace(envkey.GetStringD(consts.SkillRunnerType, RunnerTypeDocker)))
+	if runnerType != RunnerTypeDocker {
+		return nil
+	}
+	return dockerrunner.PrepareDependencies(ctx, configFromEnv(skill.DefaultRoot()))
+}
+
+func configFromEnv(skillsRoot string) scriptrunner.Config {
+	return scriptrunner.Config{
+		SkillsRoot:               skillsRoot,
+		WorkspaceRoot:            envkey.GetString(consts.SkillRunnerWorkspaceRoot),
+		DependencyRoot:           envkey.GetStringD(consts.SkillRunnerDependencyRoot, skill.DefaultDependencyRoot()),
+		RequirementsPath:         envkey.GetStringD(consts.SkillRunnerRequirements, skill.DefaultRequirementsPath()),
+		PipMirrorURL:             envkey.GetStringD(consts.SkillRunnerPipMirror, defaultPipMirror),
+		BuildNetwork:             envkey.GetStringD(consts.SkillRunnerBuildNetwork, "bridge"),
+		DependencyVersionsToKeep: envkey.GetIntD(consts.SkillRunnerDependencyVersionsToKeep, 2),
+		TimeoutSeconds:           envkey.GetIntD(consts.SkillRunnerTimeoutSeconds, 60),
+		MaxOutputBytes:           envkey.GetIntD(consts.SkillRunnerMaxOutputBytes, 1<<20),
+		DockerBinary:             envkey.GetStringD(consts.SkillRunnerDockerBinary, "docker"),
+		DockerImage:              envkey.GetStringD(consts.SkillRunnerDockerImage, "python:3.12-slim-bookworm"),
+		DockerMemoryLimitMB:      int64(envkey.GetIntD(consts.SkillRunnerDockerMemoryMB, 256)),
+		DockerCPUs:               getFloatD(consts.SkillRunnerDockerCPUs, 0.5),
+		DockerPidsLimit:          int64(envkey.GetIntD(consts.SkillRunnerDockerPidsLimit, 64)),
 	}
 }
 
