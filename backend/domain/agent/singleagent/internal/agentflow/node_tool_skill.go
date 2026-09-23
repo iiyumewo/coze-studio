@@ -32,6 +32,11 @@ import (
 	"github.com/coze-dev/coze-studio/backend/infra/skill"
 )
 
+const (
+	maxSkillFileReadBatchFiles = 16
+	maxSkillFileReadBatchBytes = 256 << 10
+)
+
 type skillToolConfig struct {
 	catalog        *skill.Catalog
 	runner         scriptrunner.Runner
@@ -105,11 +110,12 @@ func (t *skillReadTool) Invoke(_ context.Context, input *skillReadInput) (string
 }
 
 const skillFileReadToolDescription = `Read a text file from a local Skill.
-The path is relative to the selected Skill directory. Use this only when the actual contents of a specific referenced Markdown, YAML, JSON, or text file are needed for the current task. For questions that only ask which files exist, use skill_read instead. Read only the files relevant to the task; do not read every referenced file by default. Do not use script_run to read files.`
+The path is relative to the selected Skill directory. Use this only when the actual contents of referenced Markdown, YAML, JSON, or text files are needed for the current task. For one file, pass path. For several related reference files, pass paths as an ordered array; this avoids spending one model/tool turn per file. The batch is limited to 16 files and 256 KiB total content. For questions that only ask which files exist, use skill_read instead. Do not use script_run to read files.`
 
 type skillFileReadInput struct {
-	Skill string `json:"skill" jsonschema:"required,description=The Skill id from the available Skills list"`
-	Path  string `json:"path" jsonschema:"required,description=The file path relative to the selected Skill directory"`
+	Skill string   `json:"skill" jsonschema:"required,description=The Skill id from the available Skills list"`
+	Path  string   `json:"path,omitempty" jsonschema:"description=The file path relative to the selected Skill directory; use for one file"`
+	Paths []string `json:"paths" jsonschema:"description=Ordered list of file paths relative to the selected Skill directory; use for reading multiple related references in one call"`
 }
 
 type skillFileReadTool struct {
@@ -120,14 +126,39 @@ func (t *skillFileReadTool) Invoke(_ context.Context, input *skillFileReadInput)
 	if input == nil || strings.TrimSpace(input.Skill) == "" {
 		return "Skill id is required", nil
 	}
-	if strings.TrimSpace(input.Path) == "" {
-		return "File path is required", nil
+	paths := make([]string, 0, len(input.Paths)+1)
+	if strings.TrimSpace(input.Path) != "" {
+		paths = append(paths, input.Path)
 	}
-	content, err := t.catalog.ReadFile(input.Skill, input.Path)
-	if err != nil {
-		return fmt.Sprintf("Failed to read Skill file: %v", err), nil
+	for _, filePath := range input.Paths {
+		if strings.TrimSpace(filePath) != "" {
+			paths = append(paths, filePath)
+		}
 	}
-	return fmt.Sprintf("Skill file %s (%s):\n%s", input.Skill, input.Path, content), nil
+	if len(paths) == 0 {
+		return "File path or paths are required", nil
+	}
+	if len(paths) > maxSkillFileReadBatchFiles {
+		return fmt.Sprintf("Skill file batch exceeds %d files", maxSkillFileReadBatchFiles), nil
+	}
+
+	var result strings.Builder
+	totalBytes := 0
+	for _, filePath := range paths {
+		content, err := t.catalog.ReadFile(input.Skill, filePath)
+		if err != nil {
+			return fmt.Sprintf("Failed to read Skill file %s: %v", filePath, err), nil
+		}
+		totalBytes += len([]byte(content))
+		if totalBytes > maxSkillFileReadBatchBytes {
+			return fmt.Sprintf("Skill file batch exceeds %d bytes", maxSkillFileReadBatchBytes), nil
+		}
+		if result.Len() > 0 {
+			result.WriteString("\n\n")
+		}
+		fmt.Fprintf(&result, "Skill file %s (%s):\n%s", input.Skill, filePath, content)
+	}
+	return result.String(), nil
 }
 
 const scriptRunToolDescription = `Run a Python script from a local Skill.

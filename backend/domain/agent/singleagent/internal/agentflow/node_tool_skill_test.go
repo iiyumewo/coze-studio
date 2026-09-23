@@ -48,6 +48,7 @@ Use calculator.py with parameters a and b.
 `), 0o640))
 	require.NoError(t, os.MkdirAll(filepath.Join(root, "calculator", "references"), 0o750))
 	require.NoError(t, os.WriteFile(filepath.Join(root, "calculator", "references", "rules.md"), []byte("# Rules\nUse the reference.\n"), 0o640))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "calculator", "references", "format.md"), []byte("# Format\nUse the required format.\n"), 0o640))
 	require.NoError(t, os.WriteFile(filepath.Join(root, "calculator", "calculator.py"), []byte(`import json
 import sys
 
@@ -94,6 +95,10 @@ print(json.dumps({"command": args.command, "month": args.month}))
 	fileOutput, err := tools[1].InvokableRun(context.Background(), `{"skill":"calculator","path":"references/rules.md"}`)
 	require.NoError(t, err)
 	require.Contains(t, fileOutput, "Use the reference")
+	batchOutput, err := tools[1].InvokableRun(context.Background(), `{"skill":"calculator","paths":["references/rules.md","references/format.md"]}`)
+	require.NoError(t, err)
+	require.Contains(t, batchOutput, "Use the reference")
+	require.Contains(t, batchOutput, "Use the required format")
 
 	runInfo, err := tools[2].Info(context.Background())
 	require.NoError(t, err)

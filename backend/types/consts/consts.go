@@ -106,6 +106,7 @@ const (
 	SkillRunnerDockerMemoryMB           = "COZE_SKILL_RUNNER_DOCKER_MEMORY_MB"
 	SkillRunnerDockerCPUs               = "COZE_SKILL_RUNNER_DOCKER_CPUS"
 	SkillRunnerDockerPidsLimit          = "COZE_SKILL_RUNNER_DOCKER_PIDS_LIMIT"
+	AgentReactMaxSteps                  = "COZE_AGENT_REACT_MAX_STEPS"
 
 	UseSSL      = "USE_SSL"
 	SSLCertFile = "SSL_CERT_FILE"

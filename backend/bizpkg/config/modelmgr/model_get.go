@@ -242,9 +242,42 @@ func (c *ModelConfig) toModel(ctx context.Context, q *model.ModelInstance) *Mode
 			DeleteAtMs:      q.DeletedAt.Time.UnixMilli(),
 		},
 	}
+	c.applyLatestModelMeta(ctx, m)
 
 	m.Status = ternary.IFElse(q.DeletedAt.Time.IsZero(), config.ModelStatus_StatusInUse,
 		config.ModelStatus_StatusDeleted)
 
 	return m
+}
+
+// applyLatestModelMeta keeps provider capabilities and parameter ranges in
+// model_meta.json effective for model instances that were registered before a
+// metadata update. Instance-specific identity and connection settings remain
+// persisted in the database.
+func (c *ModelConfig) applyLatestModelMeta(ctx context.Context, m *Model) {
+	if c == nil || c.ModelMetaConf == nil || m == nil || m.Model == nil ||
+		m.Provider == nil || m.Connection == nil || m.Connection.BaseConnInfo == nil {
+		return
+	}
+	meta, err := c.ModelMetaConf.GetModelMeta(m.Provider.ModelClass, m.Connection.BaseConnInfo.Model)
+	if err != nil {
+		logs.CtxWarnf(ctx, "get latest model meta failed, model_id=%d, err=%v", m.ID, err)
+		return
+	}
+	if meta.DisplayInfo != nil {
+		if m.DisplayInfo == nil {
+			m.DisplayInfo = &config.DisplayInfo{}
+		} else {
+			displayInfo := *m.DisplayInfo
+			m.DisplayInfo = &displayInfo
+		}
+		m.DisplayInfo.OutputTokens = meta.DisplayInfo.OutputTokens
+		m.DisplayInfo.MaxTokens = meta.DisplayInfo.MaxTokens
+	}
+	if len(meta.Parameters) > 0 {
+		m.Parameters = meta.Parameters
+	}
+	if meta.Capability != nil {
+		m.Capability = meta.Capability
+	}
 }

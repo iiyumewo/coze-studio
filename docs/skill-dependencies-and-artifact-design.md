@@ -940,3 +940,4 @@ Dify 未使用目录，而是建立了 Workspace Binding 抽象（`api/services/
 | 2026-09-22（交付卡片与链接防误用） | 交付文件消息以签名 `file_url` 作为完成信号，不要求 `upload_status`；助手文件卡片显示复制与下载按钮。`file_upload` 不再向模型返回 `file_key` 或 URL，系统提示和工具结果明确禁止输出 `file://`、对象存储 URL、本地路径或自造 Markdown 下载链接，下载入口统一由文件卡片提供。 |
 | 2026-09-22（下载附件唯一定位） | `file_download` 入参拆为首选 `file_key` 和兼容 `file_name`。后端先对对象存储 URI 做精确匹配，再允许唯一文件名匹配；同名多文件返回候选 key，由模型重试，不按上传顺序或文件名任意选择。 |
 | 2026-09-23（历史附件按需读取） | Resolver 只自动解析当前输入附件；历史用户附件仅保留文件名和 `file_key` 元信息，不再参与本轮自动解析、文件数量上限或总字符上限。历史内容由模型按需调用 `file_search`，Skill 需要原始二进制时调用 `file_download`。 |
+| 2026-09-23（Skill 多文件读取与 ReAct 步数） | 新增 `COZE_AGENT_REACT_MAX_STEPS`，默认 32；`skill_file_read` 增加 `paths` 批量读取，限制最多 16 个文件、总内容 256 KiB，避免连续读取多个 refs 触发 Eino 默认 12 步上限或产生过多工具往返。 |

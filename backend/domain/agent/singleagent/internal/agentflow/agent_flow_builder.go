@@ -31,7 +31,9 @@ import (
 	"github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow"
 	"github.com/coze-dev/coze-studio/backend/infra/skill"
+	"github.com/coze-dev/coze-studio/backend/pkg/envkey"
 	"github.com/coze-dev/coze-studio/backend/pkg/lang/slices"
+	"github.com/coze-dev/coze-studio/backend/types/consts"
 )
 
 type Config struct {
@@ -224,8 +226,13 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 	var agentNodeOpts []compose.GraphAddNodeOpt
 	var agentNodeName string
 	if isReActAgent {
+		maxReactSteps := envkey.GetIntD(consts.AgentReactMaxSteps, 32)
+		if maxReactSteps < 1 {
+			maxReactSteps = 32
+		}
 		agent, err := react.NewAgent(ctx, &react.AgentConfig{
 			ToolCallingModel: chatModel,
+			MaxStep:          maxReactSteps,
 			ToolsConfig: compose.ToolsNodeConfig{
 				Tools: agentTools,
 			},

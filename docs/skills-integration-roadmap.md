@@ -47,6 +47,7 @@
 - 扫描本地 Skill 根目录，向模型提供每个 Skill 的名称和简短描述。
 - 被选中或被提到的 Skill 再加载完整 `SKILL.md`。
 - 增加通用 `file_download` 工具，将会话附件原始二进制写入 conversation workspace，并返回相对路径；不负责解析文本。工具入参优先使用附件元信息中的 `file_key` 唯一定位对象，`file_name` 仅作为文件名唯一时的兼容回退；同名多文件不得由模型猜测。
+- `skill_file_read` 支持 `path` 单文件和 `paths` 批量读取；批量读取受文件数和总内容大小限制，减少 Skill 参考文件较多时的 ReAct 工具轮次。
 - 增加通用 `script_run` 工具，让模型传入 Skill 名称、相对脚本路径和参数。默认使用 JSON 参数；需要兼容 `argparse` 子命令的脚本时使用 `mode="argv"` 和有序 `args`，参数会原样传给 `sys.argv[1:]`。
 - `script_run` 返回本次执行新增或修改的 workspace 文件候选列表；模型通过 `file_upload` 选择最终交付文件，后端上传并在既有 `conversation.stream.done` 前发送 `content_type=file` 消息。
 - 使用独立 `ScriptRunner` 执行本机 Python，不要求脚本包含固定的 `main()` 函数。
