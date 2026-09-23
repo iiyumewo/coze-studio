@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	maxSkillArchiveSize       int64 = 20 * 1024 * 1024
+	maxSkillArchiveSize       int64 = 30 * 1024 * 1024
 	maxSkillUnpackedSize      int64 = 100 * 1024 * 1024
 	maxSkillArchiveEntries          = 1000
 	maxSkillNameLength              = 128

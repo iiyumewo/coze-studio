@@ -29,6 +29,7 @@ import (
 	singleagent "github.com/coze-dev/coze-studio/backend/crossdomain/agent/model"
 	crossmessage "github.com/coze-dev/coze-studio/backend/crossdomain/message"
 	message "github.com/coze-dev/coze-studio/backend/crossdomain/message/model"
+	singleagententity "github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/conversation/agentrun/entity"
 	msgEntity "github.com/coze-dev/coze-studio/backend/domain/conversation/message/entity"
 	"github.com/coze-dev/coze-studio/backend/infra/imagex"
@@ -41,6 +42,8 @@ import (
 
 func (art *AgentRuntime) AgentStreamExecute(ctx context.Context, imagex imagex.ImageX) (err error) {
 	mainChan := make(chan *entity.AgentRespEvent, 100)
+	collector := singleagententity.NewUploadedFileCollector()
+	ctx = singleagententity.WithUploadedFileCollector(ctx, collector)
 
 	ar := &crossagent.AgentRuntime{
 		AgentVersion:     art.GetRunMeta().Version,
@@ -75,6 +78,7 @@ func (art *AgentRuntime) AgentStreamExecute(ctx context.Context, imagex imagex.I
 	})
 
 	wg.Wait()
+	art.UploadedFiles = collector.Files()
 
 	return err
 }

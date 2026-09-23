@@ -36,7 +36,8 @@
 ```text
 扫描本地 Skill 目录
     -> 将 Skill 清单提供给智能体运行时
-    -> 模型决定是否调用通用 script_run 工具
+    -> 模型按需调用 file_download 准备原始附件
+    -> 模型调用通用 script_run 工具
     -> ScriptRunner 在 conversation 工作目录中执行 Python
     -> 返回脚本结果给模型
 ```
@@ -45,10 +46,13 @@
 
 - 扫描本地 Skill 根目录，向模型提供每个 Skill 的名称和简短描述。
 - 被选中或被提到的 Skill 再加载完整 `SKILL.md`。
-- 增加通用 `script_run` 工具，让模型传入 Skill 名称、相对脚本路径和 JSON 参数。
+- 增加通用 `file_download` 工具，将会话附件原始二进制写入 conversation workspace，并返回相对路径；不负责解析文本。工具入参优先使用附件元信息中的 `file_key` 唯一定位对象，`file_name` 仅作为文件名唯一时的兼容回退；同名多文件不得由模型猜测。
+- 增加通用 `script_run` 工具，让模型传入 Skill 名称、相对脚本路径和参数。默认使用 JSON 参数；需要兼容 `argparse` 子命令的脚本时使用 `mode="argv"` 和有序 `args`，参数会原样传给 `sys.argv[1:]`。
+- `script_run` 返回本次执行新增或修改的 workspace 文件候选列表；模型通过 `file_upload` 选择最终交付文件，后端上传并在既有 `conversation.stream.done` 前发送 `content_type=file` 消息。
 - 使用独立 `ScriptRunner` 执行本机 Python，不要求脚本包含固定的 `main()` 函数。
 - 为每个 conversation 懒创建并复用一个本机工作目录。
 - 将执行结果接回现有 Agent/ReAct 工具循环。
+- 复用现有前端文件卡片协议展示 Skill 交付产物；assistant 文件卡片提供下载按钮，不新增独立产物卡片协议。
 - 增加最小的成功、参数传递和脚本失败测试。
 
 本机执行模式不做：
@@ -143,7 +147,9 @@
 ```text
 script_path     相对 Skill 根目录的脚本路径
 conversation_id 用于定位 conversation 工作目录
-params          传给脚本的 JSON 参数
+mode            参数模式：json（默认）或 argv
+params          json 模式下传给脚本的 JSON 参数
+args            argv 模式下按顺序传给脚本的命令行参数
 ```
 
 目录约定：
@@ -160,11 +166,18 @@ COZE_SKILLS_WORKSPACE_ROOT   conversation 工作区根目录；默认 runtime/co
 
 Skill 放在本地根目录中，目录名和 `SKILL.md` 中的描述用于生成清单。
 
-### V1-3：增加 Skill 执行适配器
+### V1-3：增加 Skill 文件与执行适配器
 
 **目的：把模型的通用 `script_run` 调用转换为 ScriptRunner 执行。**
 
-适配器负责：
+文件适配器负责：
+
+- 按会话历史中的文件名或引用定位用户附件。
+- 从对象存储读取原始二进制并写入 conversation workspace 根目录。
+- 校验文件名、工作区路径和文件大小。
+- 返回可直接传给脚本的 workspace 相对路径。
+
+执行适配器负责：
 
 - 校验 Skill 名称和相对脚本路径。
 - 校验输入参数。

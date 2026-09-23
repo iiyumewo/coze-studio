@@ -259,10 +259,15 @@ func buildConvMessage(ctx context.Context, m *entity.Message, multiContent []sch
 				if err != nil {
 					return nil, err
 				}
+				var name *string
+				if part.FileURL.Name != "" {
+					name = ptr.Of(part.FileURL.Name)
+				}
 				covMsg.MultiContent = append(covMsg.MultiContent, &crossmessage.Content{
 					Uri:  ptr.Of(part.FileURL.URI),
 					Type: model.InputTypeFile,
 					Url:  ptr.Of(part.FileURL.URL),
+					Name: name,
 				})
 			}
 		case schema.ChatMessagePartTypeAudioURL:

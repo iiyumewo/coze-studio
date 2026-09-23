@@ -54,6 +54,15 @@ import sys
 params = json.loads(sys.argv[1])
 print(json.dumps({"sum": params["a"] + params["b"]}))
 `), 0o640))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "calculator", "cli.py"), []byte(`import argparse
+import json
+
+parser = argparse.ArgumentParser()
+run = parser.add_subparsers(dest="command", required=True).add_parser("run")
+run.add_argument("--month", required=True)
+args = parser.parse_args()
+print(json.dumps({"command": args.command, "month": args.month}))
+`), 0o640))
 
 	catalog, err := skill.LoadCatalog(root)
 	require.NoError(t, err)
@@ -93,6 +102,13 @@ print(json.dumps({"sum": params["a"] + params["b"]}))
 	require.NoError(t, err)
 	require.Contains(t, runOutput, `"sum": 5`)
 	require.Contains(t, runOutput, "working_directory")
+	cliOutput, err := tools[2].InvokableRun(context.Background(), `{"skill":"calculator","script_path":"cli.py","mode":"argv","args":["run","--month","2026-08"]}`)
+	require.NoError(t, err)
+	require.Contains(t, cliOutput, `"command": "run"`)
+	require.Contains(t, cliOutput, `"month": "2026-08"`)
+	invalidModeOutput, err := tools[2].InvokableRun(context.Background(), `{"skill":"calculator","script_path":"cli.py","mode":"argv","params":{"month":"2026-08"}}`)
+	require.NoError(t, err)
+	require.Contains(t, invalidModeOutput, `params are only supported in "json" mode`)
 
 	fileRunOutput, err := tools[2].InvokableRun(context.Background(), `{"skill":"calculator","script_path":"references/rules.md","params":{}}`)
 	require.NoError(t, err)

@@ -47,7 +47,7 @@ func Test_convertToConvAndSchemaMessage(t *testing.T) {
 	sm1, err := sonic.MarshalString(&schema.Message{Content: "hello"})
 	require.NoError(t, err)
 
-	sm2, err := sonic.MarshalString(&schema.Message{MultiContent: []schema.ChatMessagePart{{Type: schema.ChatMessagePartTypeFileURL, FileURL: &schema.ChatMessageFileURL{URI: "f_uri_1"}}}})
+	sm2, err := sonic.MarshalString(&schema.Message{MultiContent: []schema.ChatMessagePart{{Type: schema.ChatMessagePartTypeFileURL, FileURL: &schema.ChatMessageFileURL{URI: "f_uri_1", Name: "账号列表.xlsx"}}}})
 	require.NoError(t, err)
 
 	sm3, err := sonic.MarshalString(&schema.Message{MultiContent: []schema.ChatMessagePart{{Type: schema.ChatMessagePartTypeText, Text: "hello"}, {Type: schema.ChatMessagePartTypeFileURL, FileURL: &schema.ChatMessageFileURL{URI: "f_uri_2"}}}})
@@ -150,7 +150,7 @@ func Test_convertToConvAndSchemaMessage(t *testing.T) {
 						Role:        schema.User,
 						ContentType: "file",
 						MultiContent: []*crossmessage.Content{
-							{Type: message.InputTypeFile, Uri: ptr.Of("f_uri_1"), Url: ptr.Of("f_uri_1")},
+							{Type: message.InputTypeFile, Uri: ptr.Of("f_uri_1"), Url: ptr.Of("f_uri_1"), Name: ptr.Of("账号列表.xlsx")},
 						},
 					},
 				},
@@ -158,7 +158,7 @@ func Test_convertToConvAndSchemaMessage(t *testing.T) {
 					{
 						Role: schema.User,
 						MultiContent: []schema.ChatMessagePart{
-							{Type: schema.ChatMessagePartTypeFileURL, FileURL: &schema.ChatMessageFileURL{URI: "f_uri_1", URL: "f_uri_1"}},
+							{Type: schema.ChatMessagePartTypeFileURL, FileURL: &schema.ChatMessageFileURL{URI: "f_uri_1", URL: "f_uri_1", Name: "账号列表.xlsx"}},
 						},
 					},
 				},

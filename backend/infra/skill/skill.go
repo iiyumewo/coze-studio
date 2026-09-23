@@ -269,7 +269,7 @@ func (c *Catalog) PromptDescription() string {
 	for _, definition := range c.skills {
 		fmt.Fprintf(&builder, "- %s (id: %s): %s\n", definition.Name, definition.ID, definition.Description)
 	}
-	builder.WriteString("When a Skill is relevant, call skill_read with its id first. If the user only asks which files or reference documents it contains, answer from skill_read and do not call skill_file_read. Use skill_file_read only for the specific referenced file contents needed for the current task, then call script_run only for a .py script.")
+	builder.WriteString("When a Skill is relevant, call skill_read with its id first. If the user only asks which files or reference documents it contains, answer from skill_read and do not call skill_file_read. Use skill_file_read only for Skill reference text, file_download when a script needs an uploaded file's original binary in the workspace, file_upload only for final files the user should receive, and script_run only for a .py script. Uploaded files are delivered by the platform as file cards; never output file:// links, object-storage URLs, local paths, or invented Markdown download links. Keep the default JSON parameter mode for scripts that parse sys.argv[1] with json.loads; use script_run mode=argv with an ordered args array for argparse-style scripts or subcommands.")
 	return builder.String()
 }
 

@@ -361,8 +361,9 @@ func (dao *MessageDAO) buildModelContent(msgDO *entity.Message) (string, error) 
 		case message.InputTypeFile:
 			one.Type = schema.ChatMessagePartTypeFileURL
 			one.FileURL = &schema.ChatMessageFileURL{
-				URL: contentData.FileData[0].Url,
-				URI: contentData.FileData[0].URI,
+				URL:  contentData.FileData[0].Url,
+				URI:  contentData.FileData[0].URI,
+				Name: contentData.FileData[0].Name,
 			}
 		case message.InputTypeVideo:
 			one.Type = schema.ChatMessagePartTypeVideoURL

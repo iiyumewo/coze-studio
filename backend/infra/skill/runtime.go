@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	maxRuntimeArchiveSize  int64 = 20 << 20
+	maxRuntimeArchiveSize  int64 = 30 << 20
 	maxRuntimeUnpackedSize int64 = 100 << 20
 	maxRuntimeEntries            = 1000
 )

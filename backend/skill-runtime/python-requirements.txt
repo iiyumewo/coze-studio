@@ -2,3 +2,6 @@
 # Keep this list administrator-managed; Skill package requirements.txt files
 # are intentionally ignored by the runtime dependency builder.
 requests==2.32.4
+openpyxl
+python-docx
+pypinyin

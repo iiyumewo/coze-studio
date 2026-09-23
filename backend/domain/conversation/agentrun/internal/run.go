@@ -26,6 +26,7 @@ import (
 	singleagent "github.com/coze-dev/coze-studio/backend/crossdomain/agent/model"
 	agentrun "github.com/coze-dev/coze-studio/backend/crossdomain/agentrun/model"
 	crossmessage "github.com/coze-dev/coze-studio/backend/crossdomain/message"
+	singleagententity "github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/conversation/agentrun/entity"
 	"github.com/coze-dev/coze-studio/backend/domain/conversation/agentrun/repository"
 	msgEntity "github.com/coze-dev/coze-studio/backend/domain/conversation/message/entity"
@@ -49,6 +50,7 @@ type AgentRuntime struct {
 	RunRecordRepo repository.RunRecordRepo
 	ImagexClient  imagex.ImageX
 	MessageEvent  *Event
+	UploadedFiles []singleagententity.UploadedFile
 }
 
 func (rd *AgentRuntime) SetRunRecord(runRecord *entity.RunRecordMeta) {
@@ -177,6 +179,9 @@ func (art *AgentRuntime) Run(ctx context.Context) (err error) {
 			}
 			art.RunProcess.StepToFailed(ctx, srRecord, art.SW, art.GetUsage())
 			return
+		}
+		if fileErr := art.emitUploadedFiles(ctx); fileErr != nil {
+			logs.CtxErrorf(ctx, "emit uploaded files failed: %v", fileErr)
 		}
 		art.RunProcess.StepToComplete(ctx, srRecord, art.SW, art.GetUsage())
 	}()

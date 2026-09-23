@@ -351,6 +351,7 @@ func (p *primaryServices) toSingleAgentServiceComponents() *singleagent.ServiceC
 		DB:                   p.basicServices.infra.DB,
 		Cache:                p.basicServices.infra.CacheCli,
 		TosClient:            p.basicServices.infra.OSS,
+		ParserManager:        p.basicServices.infra.ParserManager,
 		ImageX:               p.basicServices.infra.ImageXClient,
 		UserDomainSVC:        p.basicServices.userSVC.DomainSVC,
 		EventBus:             p.basicServices.eventbus.projectEventBus,

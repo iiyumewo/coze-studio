@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -232,22 +233,23 @@ func (r *AgentRunner) preHandlerInput(input *schema.Message) *schema.Message {
 		}
 	}
 
+	textParts := make([]string, 0, len(input.MultiContent))
 	for _, v := range input.MultiContent {
-		if v.Type != schema.ChatMessagePartTypeText {
-			continue
+		if v.Type == schema.ChatMessagePartTypeText && v.Text != "" {
+			textParts = append(textParts, v.Text)
 		}
-
-		if r.isSupportMultiContent() {
-			if len(multiContent) > 0 {
-				v.Text = concatContentString(v.Text, unSupportMultiPart)
-				multiContent = append(multiContent, v)
-			} else {
-				input.Content = concatContentString(v.Text, unSupportMultiPart)
-			}
+	}
+	textContent := strings.Join(textParts, "\n\n")
+	textContent = concatContentString(textContent, unSupportMultiPart)
+	if textContent != "" {
+		if r.isSupportMultiContent() && len(multiContent) > 0 {
+			multiContent = append(multiContent, schema.ChatMessagePart{
+				Type: schema.ChatMessagePartTypeText,
+				Text: textContent,
+			})
 		} else {
-			input.Content = concatContentString(v.Text, unSupportMultiPart)
+			input.Content = textContent
 		}
-
 	}
 	input.MultiContent = multiContent
 	return input

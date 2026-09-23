@@ -37,6 +37,7 @@ export type IProps = IBaseContentProps & {
   onCancel?: (params: IOnCancelUploadParams) => void;
   onRetry?: (params: IOnRetryUploadParams) => void;
   onCopy?: (params: IOnCopyUploadParams) => void;
+  showDownload?: boolean;
   layout: Layout;
   showBackground: boolean;
 };
@@ -50,6 +51,7 @@ export const FileContent: FC<IProps> = props => {
     onCancel,
     onCopy,
     onRetry,
+    showDownload,
     layout,
     showBackground,
   } = props;
@@ -99,6 +101,7 @@ export const FileContent: FC<IProps> = props => {
           onCancel={handleCancel}
           onCopy={() => handleCopy(index)}
           onRetry={handleRetry}
+          showDownload={showDownload}
           layout={layout}
           showBackground={showBackground}
           className={classNames({

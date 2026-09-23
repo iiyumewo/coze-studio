@@ -80,6 +80,7 @@ type ContentType string
 
 const (
 	ContentTypeText   ContentType = "text"
+	ContentTypeFile   ContentType = "file"
 	ContentTypeImage  ContentType = "image"
 	ContentTypeVideo  ContentType = "video"
 	ContentTypeMusic  ContentType = "music"

@@ -28,7 +28,7 @@ import (
 	skillapplication "github.com/coze-dev/coze-studio/backend/application/skill"
 )
 
-const maxSkillUploadSize int64 = 20 * 1024 * 1024
+const maxSkillUploadSize int64 = 30 * 1024 * 1024
 
 // CreateSkill uploads and validates a Skill archive for the current workspace.
 // @router /api/skill_manage/v1/skills [POST]
@@ -45,7 +45,7 @@ func CreateSkill(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 	if fileHeader.Size > maxSkillUploadSize {
-		invalidParamRequestResponse(c, "skill archive exceeds the 20 MB limit")
+		invalidParamRequestResponse(c, "skill archive exceeds the 30 MB limit")
 		return
 	}
 
@@ -62,7 +62,7 @@ func CreateSkill(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 	if int64(len(data)) > maxSkillUploadSize {
-		invalidParamRequestResponse(c, "skill archive exceeds the 20 MB limit")
+		invalidParamRequestResponse(c, "skill archive exceeds the 30 MB limit")
 		return
 	}
 

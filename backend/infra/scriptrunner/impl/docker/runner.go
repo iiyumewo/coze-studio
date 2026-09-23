@@ -19,7 +19,6 @@ package docker
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -152,13 +151,9 @@ func (r *Runner) Run(ctx context.Context, request *scriptrunner.RunRequest) (*sc
 		return nil, fmt.Errorf("skill directory is invalid: %w", err)
 	}
 
-	params := request.Params
-	if params == nil {
-		params = map[string]any{}
-	}
-	paramsJSON, err := json.Marshal(params)
+	scriptArgs, err := scriptrunner.BuildArguments(request)
 	if err != nil {
-		return nil, fmt.Errorf("marshal script params: %w", err)
+		return nil, err
 	}
 
 	runCtx, cancel := context.WithTimeout(ctx, time.Duration(r.config.TimeoutSeconds)*time.Second)
@@ -175,7 +170,7 @@ func (r *Runner) Run(ctx context.Context, request *scriptrunner.RunRequest) (*sc
 		workingDir,
 		dependencyDir,
 		containerScriptPath,
-		string(paramsJSON),
+		scriptArgs...,
 	)...)
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
@@ -225,7 +220,7 @@ func (r *Runner) resolveScript(scriptPath string) (hostScriptPath, skillDir, con
 	return hostScriptPath, skillDir, containerScriptPath, nil
 }
 
-func (r *Runner) dockerArgs(containerName, skillDir, workingDir, dependencyDir, scriptPath, paramsJSON string) []string {
+func (r *Runner) dockerArgs(containerName, skillDir, workingDir, dependencyDir, scriptPath string, scriptArgs ...string) []string {
 	args := []string{
 		"run",
 		"--rm",
@@ -254,7 +249,8 @@ func (r *Runner) dockerArgs(containerName, skillDir, workingDir, dependencyDir, 
 			"--volume", dependencyDir+":"+containerDependencyRoot+":ro",
 		)
 	}
-	args = append(args, r.config.DockerImage, "python", scriptPath, paramsJSON)
+	args = append(args, r.config.DockerImage, "python", scriptPath)
+	args = append(args, scriptArgs...)
 	return args
 }
 

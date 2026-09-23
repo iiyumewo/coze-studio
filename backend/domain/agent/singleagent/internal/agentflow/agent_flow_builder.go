@@ -44,6 +44,9 @@ type Config struct {
 
 	ConversationID int64
 	SkillCatalog   *skill.Catalog
+	FileSearch     entity.FileSearchFunc
+	FileDownload   entity.FileDownloadFunc
+	FileUpload     entity.FileUploadFunc
 }
 
 const (
@@ -129,6 +132,17 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 	if err != nil {
 		return nil, err
 	}
+	fileTools, err := newFileSearchTools(ctx, &fileSearchToolConfig{
+		ConversationID: conf.ConversationID,
+		AgentID:        conf.Agent.AgentID,
+		UserID:         conf.UserID,
+		Search:         conf.FileSearch,
+		Download:       conf.FileDownload,
+		Upload:         conf.FileUpload,
+	})
+	if err != nil {
+		return nil, err
+	}
 	skillTools, err := newSkillTools(ctx, &skillToolConfig{
 		catalog:        skillCatalog,
 		conversationID: conf.ConversationID,
@@ -170,7 +184,7 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 	if len(wfTools) > 0 {
 		containWfTool = true
 	}
-	agentTools := make([]tool.BaseTool, 0, len(pluginTools)+len(mcpTools)+len(skillTools)+len(wfTools)+len(dbTools)+len(avTools))
+	agentTools := make([]tool.BaseTool, 0, len(pluginTools)+len(mcpTools)+len(skillTools)+len(fileTools)+len(wfTools)+len(dbTools)+len(avTools))
 	agentTools = append(agentTools, slices.Transform(pluginTools, func(a tool.InvokableTool) tool.BaseTool {
 		return a
 	})...)
@@ -178,6 +192,9 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 		return a
 	})...)
 	agentTools = append(agentTools, slices.Transform(skillTools, func(a tool.InvokableTool) tool.BaseTool {
+		return a
+	})...)
+	agentTools = append(agentTools, slices.Transform(fileTools, func(a tool.InvokableTool) tool.BaseTool {
 		return a
 	})...)
 	agentTools = append(agentTools, slices.Transform(wfTools, func(a workflow.ToolFromWorkflow) tool.BaseTool { return a.(tool.BaseTool) })...)
@@ -188,7 +205,7 @@ func BuildAgent(ctx context.Context, conf *Config) (r *AgentRunner, err error) {
 	agentTools = append(agentTools, slices.Transform(avTools, func(a tool.InvokableTool) tool.BaseTool {
 		return a
 	})...)
-	if len(mcpTools) > 0 || len(skillTools) > 0 {
+	if len(mcpTools) > 0 || len(skillTools) > 0 || len(fileTools) > 0 {
 		if err = validateUniqueToolNames(ctx, agentTools); err != nil {
 			return nil, err
 		}

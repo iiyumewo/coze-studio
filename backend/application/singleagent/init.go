@@ -37,6 +37,7 @@ import (
 	user "github.com/coze-dev/coze-studio/backend/domain/user/service"
 	"github.com/coze-dev/coze-studio/backend/domain/workflow"
 	"github.com/coze-dev/coze-studio/backend/infra/cache"
+	documentparser "github.com/coze-dev/coze-studio/backend/infra/document/parser"
 	"github.com/coze-dev/coze-studio/backend/infra/idgen"
 	"github.com/coze-dev/coze-studio/backend/infra/imagex"
 	"github.com/coze-dev/coze-studio/backend/infra/storage"
@@ -59,13 +60,14 @@ type SkillReader interface {
 var SingleAgentSVC *SingleAgentApplicationService
 
 type ServiceComponents struct {
-	IDGen       idgen.IDGenerator
-	DB          *gorm.DB
-	Cache       cache.Cmdable
-	TosClient   storage.Storage
-	ImageX      imagex.ImageX
-	EventBus    search.ProjectEventBus
-	CounterRepo repository.CounterRepository
+	IDGen         idgen.IDGenerator
+	DB            *gorm.DB
+	Cache         cache.Cmdable
+	TosClient     storage.Storage
+	ParserManager documentparser.Manager
+	ImageX        imagex.ImageX
+	EventBus      search.ProjectEventBus
+	CounterRepo   repository.CounterRepository
 
 	KnowledgeDomainSVC   knowledge.Knowledge
 	PluginDomainSVC      service.PluginService
@@ -83,12 +85,20 @@ type ServiceComponents struct {
 
 func InitService(c *ServiceComponents) (*SingleAgentApplicationService, error) {
 	domainComponents := &singleagent.Components{
-		AgentDraftRepo:   repository.NewSingleAgentRepo(c.DB, c.IDGen, c.Cache),
-		AgentVersionRepo: repository.NewSingleAgentVersionRepo(c.DB, c.IDGen),
-		PublishInfoRepo:  kvstore.New[entity.PublishInfo](c.DB),
-		CounterRepo:      repository.NewCounterRepo(c.Cache),
-		CPStore:          c.CPStore,
-		SkillRuntime:     c.SkillRuntime,
+		AgentDraftRepo:      repository.NewSingleAgentRepo(c.DB, c.IDGen, c.Cache),
+		AgentVersionRepo:    repository.NewSingleAgentVersionRepo(c.DB, c.IDGen),
+		PublishInfoRepo:     kvstore.New[entity.PublishInfo](c.DB),
+		CounterRepo:         repository.NewCounterRepo(c.Cache),
+		CPStore:             c.CPStore,
+		SkillRuntime:        c.SkillRuntime,
+		FileContentResolver: newChatFileContentResolver(c.ParserManager, c.TosClient, c.Cache),
+		FileDownload:        newChatFileDownloader(c.TosClient),
+		FileUpload:          newChatFileUploader(c.TosClient),
+	}
+	if resolver, ok := domainComponents.FileContentResolver.(*chatFileContentResolver); ok {
+		if resolver.config.toolEnabled {
+			domainComponents.FileSearch = resolver.SearchConversation
+		}
 	}
 
 	singleAgentDomainSVC := singleagent.NewService(domainComponents)

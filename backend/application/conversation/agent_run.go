@@ -186,7 +186,9 @@ func buildARSM2Message(chunk *entity.AgentRunResponse, req *run.AgentRunRequest)
 		}
 	}
 
-	if chunk.ChunkMessageItem.IsFinish && chunkMessageItem.MessageType == crossDomainMessage.MessageTypeAnswer {
+	if chunk.ChunkMessageItem.IsFinish &&
+		chunkMessageItem.MessageType == crossDomainMessage.MessageTypeAnswer &&
+		chunkMessageItem.ContentType == crossDomainMessage.ContentTypeText {
 		chunkMessage.Message.Content = ""
 		chunkMessage.Message.ReasoningContent = ptr.Of("")
 	}
@@ -463,8 +465,9 @@ func (c *ConversationApplicationService) parseMultiContent(ctx context.Context, 
 				Type: c.getType(item.File.FileType),
 				FileData: []*crossDomainMessage.FileData{
 					{
-						Url: resourceUrl,
-						URI: item.File.FileKey,
+						Url:  resourceUrl,
+						URI:  item.File.FileKey,
+						Name: item.File.FileName,
 					},
 				},
 			})

@@ -50,8 +50,18 @@ type Components struct {
 	PublishInfoRepo  *kvstore.KVStore[entity.PublishInfo]
 	CounterRepo      repository.CounterRepository
 
-	CPStore      compose.CheckPointStore
-	SkillRuntime SkillRuntime
+	CPStore             compose.CheckPointStore
+	SkillRuntime        SkillRuntime
+	FileContentResolver FileContentResolver
+	FileSearch          entity.FileSearchFunc
+	FileDownload        entity.FileDownloadFunc
+	FileUpload          entity.FileUploadFunc
+}
+
+// FileContentResolver expands uploaded file parts into model-readable content.
+// It is optional so requests without attachments keep the existing path.
+type FileContentResolver interface {
+	Resolve(ctx context.Context, input *schema.Message, history []*schema.Message) error
 }
 
 type SkillRuntime interface {
@@ -97,6 +107,12 @@ func (s *singleAgentImpl) MGetSingleAgentDraft(ctx context.Context, agentIDs []i
 }
 
 func (s *singleAgentImpl) StreamExecute(ctx context.Context, req *entity.ExecuteRequest) (events *schema.StreamReader[*entity.AgentEvent], err error) {
+	if s.FileContentResolver != nil {
+		if err = s.FileContentResolver.Resolve(ctx, req.Input, req.History); err != nil {
+			return nil, err
+		}
+	}
+
 	ae, err := s.ObtainAgentByIdentity(ctx, req.Identity)
 	if err != nil {
 		return nil, err
@@ -123,6 +139,9 @@ func (s *singleAgentImpl) StreamExecute(ctx context.Context, req *entity.Execute
 
 		ConversationID: req.ConversationID,
 		SkillCatalog:   skillCatalog,
+		FileSearch:     s.FileSearch,
+		FileDownload:   s.FileDownload,
+		FileUpload:     s.FileUpload,
 	}
 	rn, err := agentflow.BuildAgent(ctx, conf)
 	if err != nil {

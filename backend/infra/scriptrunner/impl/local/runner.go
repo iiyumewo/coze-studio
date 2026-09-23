@@ -19,7 +19,6 @@ package local
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -99,13 +98,9 @@ func (r *Runner) Run(ctx context.Context, request *scriptrunner.RunRequest) (*sc
 		return nil, fmt.Errorf("create conversation workspace: %w", err)
 	}
 
-	params := request.Params
-	if params == nil {
-		params = map[string]any{}
-	}
-	paramsJSON, err := json.Marshal(params)
+	scriptArgs, err := scriptrunner.BuildArguments(request)
 	if err != nil {
-		return nil, fmt.Errorf("marshal script params: %w", err)
+		return nil, err
 	}
 
 	runCtx, cancel := context.WithTimeout(ctx, time.Duration(r.config.TimeoutSeconds)*time.Second)
@@ -113,7 +108,8 @@ func (r *Runner) Run(ctx context.Context, request *scriptrunner.RunRequest) (*sc
 
 	stdout := newLimitedBuffer(r.config.MaxOutputBytes, cancel)
 	stderr := newLimitedBuffer(r.config.MaxOutputBytes, cancel)
-	cmd := exec.CommandContext(runCtx, r.config.PythonPath, scriptPath, string(paramsJSON)) // ignore_security_alert RCE
+	cmdArgs := append([]string{scriptPath}, scriptArgs...)
+	cmd := exec.CommandContext(runCtx, r.config.PythonPath, cmdArgs...) // ignore_security_alert RCE
 	cmd.Dir = workingDir
 	cmd.Env = os.Environ()
 	if dependencyEnv := r.dependencyEnv(); dependencyEnv != "" {

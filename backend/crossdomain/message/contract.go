@@ -75,6 +75,7 @@ type Content struct {
 	Text *string         `json:"text,omitempty"`
 	Uri  *string         `json:"uri,omitempty"`
 	Url  *string         `json:"url,omitempty"`
+	Name *string         `json:"name,omitempty"`
 }
 
 type WfMessage struct {

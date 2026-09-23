@@ -19,6 +19,9 @@ package agentflow
 import (
 	"context"
 	"fmt"
+	"mime"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/cloudwego/eino/components/tool"
@@ -128,13 +131,20 @@ func (t *skillFileReadTool) Invoke(_ context.Context, input *skillFileReadInput)
 }
 
 const scriptRunToolDescription = `Run a Python script from a local Skill.
-The script_path must be a .py file relative to the selected Skill directory. Pass script parameters in params as a JSON object.
-Read the Skill instructions with skill_read first, then use skill_file_read for referenced files. The script runs in the current conversation's working directory, which can be reused by later calls.`
+The script_path must be a .py file relative to the selected Skill directory. Read the Skill instructions with skill_read first, then use skill_file_read for referenced Skill files. If the script needs a user-uploaded binary file, call file_download first and pass its returned workspace-relative path to the script.
+
+Argument modes:
+- mode="json" (default): pass a JSON object in params. The script receives it as one string in sys.argv[1], which is the existing Skill contract.
+- mode="argv": pass an ordered string array in args. The script receives these values unchanged as sys.argv[1:]. Use this for argparse-style scripts, including subcommands. For example, args=["run", "--month", "2026-08", "--outdir", "report"]. Do not put command-line flags in params when using argv mode.
+
+The script runs in the current conversation's working directory, which can be reused by later calls. After execution, workspace_files lists regular files currently available in that workspace; choose only user-facing outputs for file_upload.`
 
 type scriptRunInput struct {
-	Skill      string         `json:"skill" jsonschema:"required,description=The Skill id from the available Skills list"`
-	ScriptPath string         `json:"script_path" jsonschema:"required,description=The Python script path relative to the Skill directory"`
-	Params     map[string]any `json:"params" jsonschema:"description=JSON object passed to the script"`
+	Skill      string                    `json:"skill" jsonschema:"required,description=The Skill id from the available Skills list"`
+	ScriptPath string                    `json:"script_path" jsonschema:"required,description=The Python script path relative to the Skill directory"`
+	Mode       scriptrunner.ArgumentMode `json:"mode" jsonschema:"description=Argument mode: json (default) passes params as one JSON argument; argv passes args unchanged as command-line arguments"`
+	Params     map[string]any            `json:"params" jsonschema:"description=JSON object passed to the script in json mode"`
+	Args       []string                  `json:"args" jsonschema:"description=Ordered command-line arguments passed unchanged in argv mode"`
 }
 
 type scriptRunTool struct {
@@ -154,7 +164,9 @@ func (t *scriptRunTool) Invoke(ctx context.Context, input *scriptRunInput) (stri
 	response, err := t.runner.Run(ctx, &scriptrunner.RunRequest{
 		ScriptPath:     scriptPath,
 		ConversationID: t.conversationID,
+		Mode:           input.Mode,
 		Params:         input.Params,
+		Args:           input.Args,
 	})
 	if response == nil {
 		if err != nil {
@@ -174,5 +186,53 @@ func (t *scriptRunTool) Invoke(ctx context.Context, input *scriptRunInput) (stri
 	if strings.TrimSpace(response.Stderr) != "" {
 		fmt.Fprintf(&result, "\nstderr:\n%s", response.Stderr)
 	}
+	if files := listWorkspaceFiles(response.WorkingDir); len(files) > 0 {
+		result.WriteString("\nworkspace_files:\n")
+		for _, file := range files {
+			fmt.Fprintf(&result, "- path: %s\n  size: %d\n  type: %s\n", file.Path, file.Size, file.Type)
+		}
+	}
 	return result.String(), nil
+}
+
+type workspaceFile struct {
+	Path string
+	Size int64
+	Type string
+}
+
+func listWorkspaceFiles(root string) []workspaceFile {
+	if strings.TrimSpace(root) == "" {
+		return nil
+	}
+	files := make([]workspaceFile, 0)
+	_ = filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return nil
+		}
+		if entry.IsDir() {
+			if path != root && strings.HasPrefix(entry.Name(), ".") {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if strings.HasPrefix(entry.Name(), ".") || filepath.Ext(entry.Name()) == ".pyc" {
+			return nil
+		}
+		info, err := entry.Info()
+		if err != nil || !info.Mode().IsRegular() {
+			return nil
+		}
+		relative, err := filepath.Rel(root, path)
+		if err != nil {
+			return nil
+		}
+		fileType := mime.TypeByExtension(filepath.Ext(entry.Name()))
+		if fileType == "" {
+			fileType = "application/octet-stream"
+		}
+		files = append(files, workspaceFile{Path: filepath.ToSlash(relative), Size: info.Size(), Type: fileType})
+		return nil
+	})
+	return files
 }

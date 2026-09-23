@@ -605,6 +605,8 @@ run 结束 → 收集 {report.txt, report.pdf} → 上传 → 销毁目录
 
 ### 4.7 上传流程
 
+> 最新交付决策：4.6 的差集结果是“候选产物”，不等于最终交付物。模型结合 Skill 说明和用户上下文选择文件，并通过 `file_upload` 触发单文件上传；平台不根据文件名猜测最终报告，也不默认全量上传。
+
 ```
 run 收尾（三种终态均执行）
   ↓
@@ -738,6 +740,35 @@ files:
 - 同名多版本**全部列出**，靠时间戳区分，由模型自行选择，不代替它决定「只显示最新」
 
 **可选第三档**：若业务中文件数量少而关键（如单会话不超过数个），可将当前会话文件清单摘要注入 system prompt。system prompt 永不被截断，可靠性最高；代价是每轮多数百 token 且每次请求需查库。仅在能确定文件数量有上限时采用。
+
+### 4.10.1 Coze 文件消息与流式结束时序
+
+Coze 的 `conversation.stream.done` 由 AgentRun 后端生成，不是大模型生成。后端在 run 状态完成后发送 `RunEventStreamDone`，应用层再将其转换为 SSE `done`。因此交付文件必须在 `done` 之前发送，不能追加到结束事件之后。
+
+第一版复用现有消息协议，不新增独立文件事件：
+
+```text
+conversation.message.delta
+conversation.message.completed       普通文本完成
+conversation.message.completed       content_type=file 的 assistant 文件消息
+conversation.stream.done             保持既有结束语义
+```
+
+文件消息使用现有 `content_type=file` / `file_list` 结构，包含 `file_key`、`file_name`、`file_type`、`file_size` 和签名 `file_url`。后端应先持久化 assistant 文件消息，再推送流事件，确保刷新历史消息后仍可展示。
+
+Coze 前端已经存在 `FileContent` / `FileCard` 渲染链路，可以显示文件名、类型和大小。现已在 `FileCard` 成功态增加可选复制/下载按钮：仅 assistant 产物文件开启，用户上传文件卡片保持原有复制/上传交互，不改变后端文件消息协议。
+
+该时序参考 Dify 的 `message_file` → `message_end` 做法；Dify 将文件事件独立于普通文本事件推送，但共同原则是文件事件先于流结束事件。
+
+### 4.10.2 模型选择最终交付物
+
+`script_run` 只返回本次执行新增或修改的 workspace 文件候选列表，不自动上传全部候选文件。模型结合 Skill 说明和用户请求选择最终交付文件，再调用 `file_upload(path)`；后端负责 workspace 路径校验、对象存储上传、可信元信息生成、assistant 文件消息持久化和签名 URL 生成。
+
+`file_upload` 的工具返回值只向模型提供文件名、类型、大小和“平台将附加文件卡片”的状态，不返回对象存储路径、签名 URL 或可被模型拼接成链接的内部 `file_key`。系统提示明确禁止输出 `file://`、对象存储 URL、宿主路径或自造 Markdown 下载链接；下载入口由 assistant 文件卡片负责。
+
+自动文件解析只处理用户输入文件；assistant 已交付的文件消息不再次注入模型或消耗本轮解析配额。相同对象存储 URI 在一轮对话内只下载、解析一次，避免历史消息与当前消息重复计算。
+
+这样可以避免平台误把处理中间表、调试日志或缓存文件交付给用户，也不要求 Skill 作者遵守额外的输出目录约定。模型只负责选择，平台负责授权、上传、消息和下载能力。
 
 ### 4.11 已知限制：状态型 Skill 的静默降级
 
@@ -905,3 +936,7 @@ Dify 未使用目录，而是建立了 Workspace Binding 抽象（`api/services/
 | 2026-09-20（Phase 1 实现与验证） | 将全局清单固定到仓库 `backend/conf/skill-runtime/python-requirements.txt`，明确忽略 Skill 包内 `requirements.txt`；实现后端启动时 builder、`versions/current` 原子切换、manifest、默认保留 2 个版本和执行期只读挂载。默认 pip 源固定为清华源，仅显式 `COZE_SKILL_RUNNER_PIP_MIRROR` 可覆盖，避免继承宿主 `PIP_INDEX_URL`。完成针对性 Go 测试、Docker 集成测试、`go vet` 与 `8888` 前端真实 Skill 调用验证；补充公共镜像与生产私有镜像治理的边界。 |
 | 2026-09-20（Phase 1 生产路径修正） | 将全局清单从会被生产整体挂载覆盖的 `backend/conf/skill-runtime` 移到独立的 `backend/skill-runtime`，镜像路径改为 `/app/resources/skill-runtime`；同步更新 Debug 复制脚本和生产环境变量。`/data/hz-agent/coze/runtime` 仍作为 builder 与执行容器共享的运行时目录。 |
 | 2026-09-20（Phase 1 builder 输入修正） | builder 不再把后端容器内的 requirements 路径作为宿主 Docker bind mount；后端读取镜像内清单后通过 stdin 传给 builder，builder 使用 `/dev/stdin` 交给 pip。这样生产只需共享 runtime 输出目录，不需要在宿主机额外放置 requirements 文件。 |
+| 2026-09-22（产物交付协议确认） | 确认由模型从 `script_run` 返回的候选文件中选择最终产物，通过 `file_upload` 上传；后端持久化 assistant 文件消息，并在既有 `conversation.stream.done` 之前发送 `content_type=file` 消息。`done` 继续由后端生成，不追加结束后数据；Coze 前端复用现有 FileCard，assistant 文件卡片增加下载按钮。 |
+| 2026-09-22（交付卡片与链接防误用） | 交付文件消息以签名 `file_url` 作为完成信号，不要求 `upload_status`；助手文件卡片显示复制与下载按钮。`file_upload` 不再向模型返回 `file_key` 或 URL，系统提示和工具结果明确禁止输出 `file://`、对象存储 URL、本地路径或自造 Markdown 下载链接，下载入口统一由文件卡片提供。 |
+| 2026-09-22（下载附件唯一定位） | `file_download` 入参拆为首选 `file_key` 和兼容 `file_name`。后端先对对象存储 URI 做精确匹配，再允许唯一文件名匹配；同名多文件返回候选 key，由模型重试，不按上传顺序或文件名任意选择。 |
+| 2026-09-23（历史附件按需读取） | Resolver 只自动解析当前输入附件；历史用户附件仅保留文件名和 `file_key` 元信息，不再参与本轮自动解析、文件数量上限或总字符上限。历史内容由模型按需调用 `file_search`，Skill 需要原始二进制时调用 `file_download`。 |

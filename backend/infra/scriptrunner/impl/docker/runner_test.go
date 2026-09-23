@@ -58,6 +58,12 @@ func TestRunnerDockerArgsMountCurrentDependenciesReadOnly(t *testing.T) {
 	require.Contains(t, joined, "/runtime/skill-deps/versions/abc:/opt/skill-deps:ro")
 }
 
+func TestRunnerDockerArgsKeepCommandLineArgumentsSeparate(t *testing.T) {
+	runner := &Runner{config: scriptrunner.Config{DockerImage: defaultImage}}
+	args := runner.dockerArgs("sandbox", "/skills/demo", "/work/42", "", "/opt/skill/report.py", "run", "--outdir", "monthly report")
+	require.Equal(t, []string{defaultImage, "python", "/opt/skill/report.py", "run", "--outdir", "monthly report"}, args[len(args)-6:])
+}
+
 func TestRunnerDockerIntegration(t *testing.T) {
 	if os.Getenv("COZE_RUN_DOCKER_TESTS") != "1" {
 		t.Skip("set COZE_RUN_DOCKER_TESTS=1 to run Docker integration tests")
@@ -110,6 +116,18 @@ func TestRunnerDockerIntegration(t *testing.T) {
 		require.Equal(t, []string{"other"}, separate)
 	})
 
+	t.Run("argparse subcommand", func(t *testing.T) {
+		response, runErr := runner.Run(context.Background(), &scriptrunner.RunRequest{
+			ScriptPath:     "report/argparse.py",
+			ConversationID: 203,
+			Mode:           scriptrunner.ArgumentModeArgv,
+			Args:           []string{"run", "--month", "2026-08"},
+		})
+		require.NoError(t, runErr)
+		require.Equal(t, 0, response.ExitCode)
+		require.JSONEq(t, `{"month": "2026-08"}`, strings.TrimSpace(response.Stdout))
+	})
+
 	t.Run("skill mount is read only", func(t *testing.T) {
 		response, runErr := runner.Run(context.Background(), &scriptrunner.RunRequest{
 			ScriptPath:     "readonly/write.py",
@@ -149,6 +167,15 @@ func runNotes(t *testing.T, runner *Runner, conversationID int64, note string) [
 func writeTestSkills(t *testing.T, root string) {
 	t.Helper()
 	files := map[string]string{
+		"report/argparse.py": `import argparse
+import json
+
+parser = argparse.ArgumentParser()
+run = parser.add_subparsers(dest="command", required=True).add_parser("run")
+run.add_argument("--month", required=True)
+args = parser.parse_args()
+print(json.dumps({"month": args.month}))
+`,
 		"report/format.py": `def build(title, items):
     return "# " + title + "\n" + "\n".join(f"{i}. {item}" for i, item in enumerate(items, 1)) + "\n"
 `,

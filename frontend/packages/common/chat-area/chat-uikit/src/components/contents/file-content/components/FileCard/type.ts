@@ -47,6 +47,8 @@ export interface IFileCardProps {
    * Copy URL event callback
    */
   onCopy: () => void;
+  /** Show a download action for a delivered assistant file. */
+  showDownload?: boolean;
   className?: string;
   layout: Layout;
   showBackground: boolean;

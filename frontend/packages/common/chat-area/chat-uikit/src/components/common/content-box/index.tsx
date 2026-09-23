@@ -191,6 +191,7 @@ export const ContentBox: FC<IContentBoxProps> = props => {
         onCancel={onCancelUpload}
         onCopy={onCopyUpload}
         onRetry={onRetryUpload}
+        showDownload={message.role === 'assistant'}
         layout={layout}
         showBackground={showBackground}
       />

@@ -17,13 +17,14 @@
 import { type FC } from 'react';
 
 import classNames from 'classnames';
+import { Layout } from '@coze-common/chat-uikit-shared';
 import {
   IconCozCopy,
   IconCozCross,
+  IconCozDownload,
   IconCozRefresh,
 } from '@coze-arch/coze-design/icons';
 import { IconButton, Typography } from '@coze-arch/coze-design';
-import { Layout } from '@coze-common/chat-uikit-shared';
 
 import { UIKitTooltip } from '../../../../common/tooltips';
 import { getFileExtensionAndName } from '../../../../../utils/file-name';
@@ -55,6 +56,7 @@ const FileCard: FC<IFileCardProps> = props => {
     className,
     layout,
     showBackground,
+    showDownload,
   } = props;
 
   const { statusKey, statusEnum, percentKey } = attributeKeys;
@@ -73,6 +75,18 @@ const FileCard: FC<IFileCardProps> = props => {
   );
 
   const isCanceled = file[statusKey] === statusEnum.cancelEnum;
+  // Delivered assistant files do not pass through the upload state machine, so
+  // they have no upload_status. A signed URL is the completion signal for them.
+  const isReady =
+    file[statusKey] === statusEnum.successEnum ||
+    (showDownload === true && Boolean(file.file_url));
+
+  const handleDownload = () => {
+    if (!file.file_url) {
+      return;
+    }
+    window.open(file.file_url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div
@@ -181,7 +195,7 @@ const FileCard: FC<IFileCardProps> = props => {
                 />
               </UIKitTooltip>
             )}
-            {file[statusKey] === statusEnum.successEnum && (
+            {isReady ? (
               <UIKitTooltip
                 theme="light"
                 position="top"
@@ -200,7 +214,23 @@ const FileCard: FC<IFileCardProps> = props => {
                   onClick={onCopy}
                 />
               </UIKitTooltip>
-            )}
+            ) : null}
+            {showDownload && isReady && file.file_url ? (
+              <UIKitTooltip
+                theme="light"
+                position="top"
+                content="下载文件"
+                hideToolTip={layout === Layout.MOBILE}
+              >
+                <IconButton
+                  icon={<IconCozDownload />}
+                  size="small"
+                  color="secondary"
+                  onClick={handleDownload}
+                  aria-label="下载文件"
+                />
+              </UIKitTooltip>
+            ) : null}
           </div>
           {file[statusKey] === statusEnum.uploadingEnum && (
             <div
@@ -216,6 +246,37 @@ const FileCard: FC<IFileCardProps> = props => {
             />
           )}
         </>
+      ) : showDownload && isReady && file.file_url ? (
+        <div className="ml-8px flex">
+          <UIKitTooltip
+            theme="light"
+            position="top"
+            content={tooltipsCopywriting?.copy}
+            hideToolTip={layout === Layout.MOBILE}
+          >
+            <IconButton
+              icon={<IconCozCopy />}
+              size="small"
+              color="secondary"
+              onClick={onCopy}
+              aria-label="复制文件地址"
+            />
+          </UIKitTooltip>
+          <UIKitTooltip
+            theme="light"
+            position="top"
+            content="下载文件"
+            hideToolTip={layout === Layout.MOBILE}
+          >
+            <IconButton
+              icon={<IconCozDownload />}
+              size="small"
+              color="secondary"
+              onClick={handleDownload}
+              aria-label="下载文件"
+            />
+          </UIKitTooltip>
+        </div>
       ) : null}
     </div>
   );
