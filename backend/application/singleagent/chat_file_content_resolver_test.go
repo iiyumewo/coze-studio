@@ -209,3 +209,18 @@ func TestChatFileContentResolverHistoryOnlyDoesNotConsumeParseLimit(t *testing.T
 	require.Contains(t, history[0].MultiContent[0].Text, "old-a.txt")
 	require.Contains(t, history[0].MultiContent[1].Text, "old-b.txt")
 }
+
+func TestSelectLatestFileMatchPrefersNewestDuplicate(t *testing.T) {
+	files := []conversationSearchFile{
+		{URI: "uploads/old/report.xlsx", Name: "report.xlsx"},
+		{URI: "uploads/new/report.xlsx", Name: "report.xlsx"},
+	}
+
+	selected := selectLatestFileMatch(files, "report.xlsx")
+	require.Len(t, selected, 1)
+	require.Equal(t, "uploads/new/report.xlsx", selected[0].URI)
+
+	selected = selectLatestFileMatch(files, "uploads/old/report.xlsx")
+	require.Len(t, selected, 1)
+	require.Equal(t, "uploads/old/report.xlsx", selected[0].URI)
+}

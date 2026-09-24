@@ -91,6 +91,11 @@ type chatFileContentResolver struct {
 	semaphore     chan struct{}
 }
 
+type conversationSearchFile struct {
+	URI  string
+	Name string
+}
+
 func newChatFileContentResolver(parserManager documentparser.Manager, objectStorage storage.Storage, cacheClient cache.Cmdable) singleagent.FileContentResolver {
 	config := loadChatFileParseConfig()
 	logs.Infof("[ChatFileContentResolver] init enabled=%t parser_manager_present=%t storage_present=%t", config.enabled, parserManager != nil, objectStorage != nil)
@@ -481,11 +486,7 @@ func (r *chatFileContentResolver) SearchConversation(
 		return "", fmt.Errorf("list conversation files failed: %w", err)
 	}
 
-	type fileRefInfo struct {
-		URI  string
-		Name string
-	}
-	files := make([]fileRefInfo, 0)
+	files := make([]conversationSearchFile, 0)
 	seen := make(map[string]struct{})
 	fileRefLower := strings.ToLower(strings.TrimSpace(fileRef))
 	for _, message := range messageList.Messages {
@@ -508,11 +509,14 @@ func (r *chatFileContentResolver) SearchConversation(
 				continue
 			}
 			seen[uri] = struct{}{}
-			files = append(files, fileRefInfo{URI: uri, Name: name})
+			files = append(files, conversationSearchFile{URI: uri, Name: name})
 		}
 	}
 	if len(files) == 0 {
 		return "", fmt.Errorf("no matching files found in current conversation")
+	}
+	if strings.TrimSpace(fileRef) != "" {
+		files = selectLatestFileMatch(files, fileRef)
 	}
 
 	var result strings.Builder
@@ -531,6 +535,18 @@ func (r *chatFileContentResolver) SearchConversation(
 		logs.CtxInfof(ctx, "[ChatFileContentResolver] file search completed, files=%d, query_chars=%d", len(files), len([]rune(query)))
 	}
 	return truncateRunes(result.String(), r.config.maxTotalChars), nil
+}
+
+func selectLatestFileMatch(files []conversationSearchFile, fileRef string) []conversationSearchFile {
+	// MessageList is requested in ascending order, so the last matching
+	// attachment is the newest one when duplicate filenames are uploaded.
+	needle := strings.ToLower(strings.TrimSpace(fileRef))
+	for i := len(files) - 1; i >= 0; i-- {
+		if files[i].URI == strings.TrimSpace(fileRef) || strings.EqualFold(files[i].Name, strings.TrimSpace(fileRef)) || strings.Contains(strings.ToLower(files[i].Name), needle) || strings.Contains(strings.ToLower(files[i].URI), needle) {
+			return files[i : i+1]
+		}
+	}
+	return files
 }
 
 func (r *chatFileContentResolver) parseCacheKey(ctx context.Context, uri string) string {

@@ -37,8 +37,9 @@ type fileSearchToolConfig struct {
 }
 
 type fileSearchInput struct {
-	FileRef string `json:"file_ref" jsonschema:"description=Optional file name or reference. Leave empty to search all files in the current conversation."`
-	Query   string `json:"query" jsonschema:"required,description=The question or information to find in the conversation files"`
+	FileKey  string `json:"file_key,omitempty" jsonschema:"description=Exact URI or file_key from the current conversation attachment metadata; preferred because filenames are not unique"`
+	FileName string `json:"file_name,omitempty" jsonschema:"description=Original uploaded filename; if duplicated, the newest matching file is selected"`
+	Query    string `json:"query" jsonschema:"required,description=The question or information to find in the conversation files"`
 }
 
 func newFileSearchTools(_ context.Context, conf *fileSearchToolConfig) ([]tool.InvokableTool, error) {
@@ -50,9 +51,16 @@ func newFileSearchTools(_ context.Context, conf *fileSearchToolConfig) ([]tool.I
 	if conf.Search != nil {
 		searchTool, err := utils.InferTool(
 			"file_search",
-			"Search files attached to the current conversation. Use this tool when the user asks about a historical or uploaded file. The backend will read the file from its own storage, use the parse cache when available, and parse it on a cache miss. Do not invent file URLs.",
+			"Search files attached to the current conversation. Use this tool when the user asks about a historical or uploaded file. Prefer file_key: pass the exact URI/file_key from the attachment metadata. Use file_name only as a compatibility fallback; when several uploads have the same name, the newest matching attachment is selected. Leave both empty only when searching all conversation files. The backend reads from its own storage, uses the parse cache when available, and parses on a cache miss. Do not invent file URLs.",
 			func(ctx context.Context, input *fileSearchInput) (string, error) {
-				return conf.Search(ctx, conf.ConversationID, conf.AgentID, conf.UserID, input.FileRef, input.Query)
+				if input == nil {
+					return "query is required", nil
+				}
+				fileRef := strings.TrimSpace(input.FileKey)
+				if fileRef == "" {
+					fileRef = strings.TrimSpace(input.FileName)
+				}
+				return conf.Search(ctx, conf.ConversationID, conf.AgentID, conf.UserID, fileRef, input.Query)
 			},
 		)
 		if err != nil {

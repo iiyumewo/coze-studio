@@ -102,3 +102,19 @@ func TestNewFileSearchToolsKeepsSearchToolOrder(t *testing.T) {
 	require.Equal(t, "file_search", searchInfo.Name)
 	require.Equal(t, "file_download", downloadInfo.Name)
 }
+
+func TestNewFileSearchToolPrefersFileKey(t *testing.T) {
+	var fileRef string
+	tools, err := newFileSearchTools(context.Background(), &fileSearchToolConfig{
+		Search: func(_ context.Context, _ int64, _ int64, _, ref, query string) (string, error) {
+			fileRef = ref
+			require.Equal(t, "find rows", query)
+			return "content", nil
+		},
+	})
+	require.NoError(t, err)
+	result, err := tools[0].InvokableRun(context.Background(), `{"file_key":"uploads/new/report.xlsx","file_name":"report.xlsx","query":"find rows"}`)
+	require.NoError(t, err)
+	require.Equal(t, "content", result)
+	require.Equal(t, "uploads/new/report.xlsx", fileRef)
+}
