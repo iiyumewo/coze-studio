@@ -8,7 +8,7 @@
 >
 > 当前进度：V1 本机执行已完成；V1-S Docker 基线沙箱与全局依赖预装 Phase 1 已实现，并已通过 Docker 集成测试和本地前端真实 Skill 调用验证。
 >
-> 详细设计：V3（受控执行隔离）、V4（分布式工作区）、V5（生产安全治理）中关于 Skill 依赖管理与产物存储的部分，见 `docs/skill-dependencies-and-artifact-design.md`。
+> 详细设计：V3（受控执行隔离）、V4（分布式工作区）、V5（生产安全治理）中关于 Skill 依赖管理与产物存储的部分，见 `docs/Coze-Skill依赖管理与产物存储设计.md`。
 
 ## 1. 总体原则
 
@@ -260,4 +260,4 @@ CodeRunner 核心接口：原则上不需要修改
 - Skill 结果是直接返回 JSON，还是包装成统一的工具结果结构。
 - V2 是先做资源库上传，还是先做智能体绑定配置。
 
-除非重新讨论确认，不应在本阶段提前实现多实例和生产治理能力。依赖预装按 `docs/skill-dependencies-and-artifact-design.md` 的 Phase 1 实现：管理员维护全局 requirements，后端启动时由独立 builder 构建并只读挂载到执行容器。
+除非重新讨论确认，不应在本阶段提前实现多实例和生产治理能力。依赖预装按 `docs/Coze-Skill依赖管理与产物存储设计.md` 的 Phase 1 实现：管理员维护全局 requirements，后端启动时由独立 builder 构建并只读挂载到执行容器。

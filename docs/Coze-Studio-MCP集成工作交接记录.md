@@ -70,8 +70,8 @@ git log --oneline main..HEAD
 尚未提交的文档：
 
 ```text
-docs/business-system-integration-and-billing-design.md
-docs/mcp-integration-progress-handoff.md
+docs/业务系统集成Coze账号对话与计费设计记录.md
+docs/Coze-Studio-MCP集成工作交接记录.md
 ```
 
 除非用户明确要求，不要擅自提交这两份文档。
@@ -408,7 +408,7 @@ Vitest   → 单元测试
 业务系统账号、历史会话和 Token 计费设计见：
 
 ```text
-docs/business-system-integration-and-billing-design.md
+docs/业务系统集成Coze账号对话与计费设计记录.md
 ```
 
 其中已经确定：
@@ -430,7 +430,7 @@ chat_id 作为逐轮 Token 结算幂等键
 
 ```text
 1. 阅读本文。
-2. 阅读 docs/business-system-integration-and-billing-design.md。
+2. 阅读 docs/业务系统集成Coze账号对话与计费设计记录.md。
 3. 检查当前分支必须是 feat/hz-agent。
 4. 检查 main..HEAD 的两笔 MCP 提交。
 5. 检查工作区，保护尚未提交的文档和用户改动。
