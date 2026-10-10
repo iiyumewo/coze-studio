@@ -25,7 +25,11 @@ import (
 	"github.com/cloudwego/eino/components/document/parser"
 	"github.com/cloudwego/eino/schema"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
+	crossmessage "github.com/coze-dev/coze-studio/backend/crossdomain/message"
+	"github.com/coze-dev/coze-studio/backend/crossdomain/message/messagemock"
+	messagemodel "github.com/coze-dev/coze-studio/backend/crossdomain/message/model"
 	documentparser "github.com/coze-dev/coze-studio/backend/infra/document/parser"
 	"github.com/coze-dev/coze-studio/backend/infra/storage"
 )
@@ -119,7 +123,26 @@ func TestChatFileContentResolverResolve(t *testing.T) {
 	require.Len(t, input.MultiContent, 2)
 	require.Equal(t, "summarize", input.MultiContent[0].Text)
 	require.Equal(t, schema.ChatMessagePartTypeText, input.MultiContent[1].Type)
+	require.Contains(t, input.MultiContent[1].Text, "[当前附件: report.txt; file_key: uploads/report.txt]")
 	require.Contains(t, input.MultiContent[1].Text, "parsed document content")
+}
+
+func TestChatFileContentResolverKeepsMetadataForRepeatedCurrentFile(t *testing.T) {
+	resolver := newTestChatFileResolver(&fakeChatFileStorage{body: []byte("file")})
+	input := &schema.Message{
+		MultiContent: []schema.ChatMessagePart{
+			{Type: schema.ChatMessagePartTypeFileURL, FileURL: &schema.ChatMessageFileURL{URI: "uploads/report.txt", Name: "report.txt"}},
+			{Type: schema.ChatMessagePartTypeFileURL, FileURL: &schema.ChatMessageFileURL{URI: "uploads/report.txt", Name: "report.txt"}},
+		},
+	}
+
+	require.NoError(t, resolver.Resolve(context.Background(), input, nil))
+	require.Len(t, input.MultiContent, 2)
+	for _, part := range input.MultiContent {
+		require.Equal(t, schema.ChatMessagePartTypeText, part.Type)
+		require.Contains(t, part.Text, "[当前附件: report.txt; file_key: uploads/report.txt]")
+		require.Contains(t, part.Text, "parsed document content")
+	}
 }
 
 func TestChatFileContentResolverLeavesNonFileInputUntouched(t *testing.T) {
@@ -223,4 +246,29 @@ func TestSelectLatestFileMatchPrefersNewestDuplicate(t *testing.T) {
 	selected = selectLatestFileMatch(files, "uploads/old/report.xlsx")
 	require.Len(t, selected, 1)
 	require.Equal(t, "uploads/old/report.xlsx", selected[0].URI)
+}
+
+func TestChatFileContentResolverSearchAcceptsCompositeUserID(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	messageService := messagemock.NewMockMessage(ctrl)
+	messageService.EXPECT().MessageList(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, req *crossmessage.MessageListRequest) (*crossmessage.MessageListResponse, error) {
+		require.Equal(t, "173381235121909759:1", req.UserID)
+		return &crossmessage.MessageListResponse{
+			Messages: []*crossmessage.WfMessage{{
+				MultiContent: []*crossmessage.Content{{
+					Type: messagemodel.InputTypeFile,
+					Uri:  stringPtr("uploads/report.txt"),
+					Name: stringPtr("report.txt"),
+				}},
+			}},
+		}, nil
+	})
+	crossmessage.SetDefaultSVC(messageService)
+	t.Cleanup(func() { crossmessage.SetDefaultSVC(nil) })
+
+	resolver := newTestChatFileResolver(&fakeChatFileStorage{body: []byte("report")})
+	result, err := resolver.SearchConversation(context.Background(), 123, 456, "173381235121909759:1", "uploads/report.txt", "summary")
+
+	require.NoError(t, err)
+	require.Contains(t, result, "parsed document content")
 }

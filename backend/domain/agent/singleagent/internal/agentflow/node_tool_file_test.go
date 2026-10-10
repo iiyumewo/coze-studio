@@ -24,8 +24,10 @@ package agentflow
 
 import (
 	"context"
+	"errors"
 	"testing"
 
+	singleagent "github.com/coze-dev/coze-studio/backend/crossdomain/agent/model"
 	"github.com/coze-dev/coze-studio/backend/domain/agent/singleagent/entity"
 	"github.com/stretchr/testify/require"
 )
@@ -57,6 +59,29 @@ func TestNewFileSearchToolsIncludesDownloadTool(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "report.xlsx", result)
 	require.Equal(t, []string{"uploads/report.xlsx", "report.xlsx"}, refs)
+}
+
+func TestFileDownloadFailureIsReturnedToModelWithoutStoppingRun(t *testing.T) {
+	tools, err := newFileSearchTools(context.Background(), &fileSearchToolConfig{
+		Download: func(_ context.Context, _ int64, _ int64, _ string, _ string) (string, error) {
+			return "", errors.New("no matching files found in current conversation")
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, tools, 1)
+
+	events := make([]*singleagent.ToolActivityEvent, 0, 2)
+	ctx := withToolActivityEmitter(context.Background(), func(event *singleagent.ToolActivityEvent) {
+		events = append(events, event)
+	})
+	result, err := tools[0].InvokableRun(ctx, `{"file_key":"urn:file-key:invented"}`)
+
+	require.NoError(t, err)
+	require.Contains(t, result, "暂时找不到之前上传的附件")
+	require.Contains(t, result, "不要向用户展示或编造 file_key")
+	require.Len(t, events, 2)
+	require.Equal(t, toolActivityPhaseStarted, events[0].Phase)
+	require.Equal(t, toolActivityPhaseFailed, events[1].Phase)
 }
 
 func TestNewFileSearchToolsIncludesUploadTool(t *testing.T) {

@@ -23,7 +23,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 
@@ -233,7 +232,10 @@ func (r *chatFileContentResolver) resolveCurrentMessage(
 		logs.CtxInfof(ctx, "[ChatFileContentResolver] current file part detected, name=%q, uri_present=%t", part.FileURL.Name, part.FileURL.URI != "")
 
 		if cachedContent, ok := resolvedContents[part.FileURL.URI]; ok {
-			resolved = append(resolved, schema.ChatMessagePart{Type: schema.ChatMessagePartTypeText, Text: cachedContent})
+			resolved = append(resolved, schema.ChatMessagePart{
+				Type: schema.ChatMessagePartTypeText,
+				Text: currentFileContext(part.FileURL, cachedContent),
+			})
 			continue
 		}
 		messageCount++
@@ -255,12 +257,31 @@ func (r *chatFileContentResolver) resolveCurrentMessage(
 		resolvedContents[part.FileURL.URI] = fileContent
 		resolved = append(resolved, schema.ChatMessagePart{
 			Type: schema.ChatMessagePartTypeText,
-			Text: fileContent,
+			Text: currentFileContext(part.FileURL, fileContent),
 		})
 	}
 
 	message.MultiContent = resolved
 	return messageCount, contentChars, nil
+}
+
+func currentFileContext(file *schema.ChatMessageFileURL, parsedContent string) string {
+	if file == nil || strings.TrimSpace(file.URI) == "" {
+		return parsedContent
+	}
+	name := strings.TrimSpace(file.Name)
+	if name == "" {
+		name = path.Base(strings.Split(file.URI, "?")[0])
+	}
+	metadata := "[当前附件"
+	if name != "" && name != "." {
+		metadata += ": " + name
+	}
+	metadata += "; file_key: " + file.URI + "]"
+	if strings.TrimSpace(parsedContent) == "" {
+		return metadata
+	}
+	return metadata + "\n\n" + parsedContent
 }
 
 // sanitizeInternalFileReferences removes storage/workspace references from
@@ -470,15 +491,10 @@ func (r *chatFileContentResolver) SearchConversation(
 	fileRef string,
 	query string,
 ) (string, error) {
-	uid, err := strconv.ParseInt(userID, 10, 64)
-	if err != nil {
-		return "", fmt.Errorf("file search user id is invalid")
-	}
-
 	messageList, err := crossmessage.DefaultSVC().MessageList(ctx, &crossmessage.MessageListRequest{
 		ConversationID: conversationID,
 		Limit:          100,
-		UserID:         uid,
+		UserID:         userID,
 		BizID:          agentID,
 		OrderBy:        ptr.Of("ASC"),
 	})

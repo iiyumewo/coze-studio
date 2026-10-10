@@ -71,6 +71,12 @@ func (r *AgentRunner) StreamExecute(ctx context.Context, req *AgentRequest) (
 	executeID := uuid.New()
 
 	hdl, sr, sw := newReplyCallback(ctx, executeID.String(), r.returnDirectlyTools)
+	ctx = withToolActivityEmitter(ctx, func(activity *singleagent.ToolActivityEvent) {
+		sw.Send(&entity.AgentEvent{
+			EventType: singleagent.EventTypeOfActivity,
+			Activity:  activity,
+		}, nil)
+	})
 
 	var composeOpts []compose.Option
 	var pipeMsgOpt compose.Option

@@ -58,7 +58,7 @@ type MessageListRequest struct {
 	Limit          int64
 	BeforeID       *string
 	AfterID        *string
-	UserID         int64
+	UserID         string
 	BizID          int64
 	OrderBy        *string
 }

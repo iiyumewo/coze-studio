@@ -37,7 +37,20 @@ const (
 	EventTypeOfSuggest                EventType = "suggest"
 	EventTypeOfKnowledge              EventType = "knowledge"
 	EventTypeOfInterrupt              EventType = "interrupt"
+	EventTypeOfActivity               EventType = "activity"
 )
+
+type ToolActivityEvent struct {
+	ActivityID     string `json:"activity_id"`
+	ToolName       string `json:"tool_name"`
+	Phase          string `json:"phase"`
+	Text           string `json:"text"`
+	ConversationID string `json:"conversation_id,omitempty"`
+	ChatID         string `json:"chat_id,omitempty"`
+	BotID          string `json:"bot_id,omitempty"`
+	SectionID      string `json:"section_id,omitempty"`
+	CreatedAt      int64  `json:"created_at,omitempty"`
+}
 
 type AgentEvent struct {
 	EventType EventType
@@ -51,6 +64,7 @@ type AgentEvent struct {
 	Suggest         *schema.Message
 	Knowledge       []*schema.Document
 	Interrupt       *InterruptInfo
+	Activity        *ToolActivityEvent
 }
 
 type SingleAgent struct {

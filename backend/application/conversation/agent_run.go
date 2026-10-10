@@ -139,6 +139,8 @@ func (c *ConversationApplicationService) pullStream(ctx context.Context, sseSend
 			sseSender.Send(ctx, buildMessageChunkEvent(run.RunEventMessage, buildARSM2Message(chunk, req)))
 		case entity.RunEventMessageDelta, entity.RunEventMessageCompleted:
 			sseSender.Send(ctx, buildMessageChunkEvent(run.RunEventMessage, buildARSM2Message(chunk, req)))
+		case entity.RunEventActivity:
+			// Activity events are currently exposed only through the OpenAPI/Chat SDK stream.
 		default:
 			logs.CtxErrorf(ctx, "unknown handler event:%v", chunk.Event)
 		}

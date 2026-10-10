@@ -70,20 +70,23 @@ func TestChatFileDownloaderDownloadsOriginalFileToConversationWorkspace(t *testi
 
 	ctrl := gomock.NewController(t)
 	messageService := messagemock.NewMockMessage(ctrl)
-	messageService.EXPECT().MessageList(gomock.Any(), gomock.Any()).Return(&crossmessage.MessageListResponse{
-		Messages: []*crossmessage.WfMessage{{
-			MultiContent: []*crossmessage.Content{{
-				Type: messagemodel.InputTypeFile,
-				Uri:  stringPtr("uploads/report.xlsx"),
-				Name: stringPtr("report.xlsx"),
+	messageService.EXPECT().MessageList(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, req *crossmessage.MessageListRequest) (*crossmessage.MessageListResponse, error) {
+		require.Equal(t, "173381235121909759:1", req.UserID)
+		return &crossmessage.MessageListResponse{
+			Messages: []*crossmessage.WfMessage{{
+				MultiContent: []*crossmessage.Content{{
+					Type: messagemodel.InputTypeFile,
+					Uri:  stringPtr("uploads/report.xlsx"),
+					Name: stringPtr("report.xlsx"),
+				}},
 			}},
-		}},
-	}, nil)
+		}, nil
+	})
 	crossmessage.SetDefaultSVC(messageService)
 	t.Cleanup(func() { crossmessage.SetDefaultSVC(nil) })
 
 	downloader := newChatFileDownloader(&fakeChatFileStorage{body: []byte("xlsx bytes")})
-	path, err := downloader(context.Background(), 123, 456, "789", "report.xlsx")
+	path, err := downloader(context.Background(), 123, 456, "173381235121909759:1", "report.xlsx")
 	require.NoError(t, err)
 	require.Equal(t, "report.xlsx", path)
 	body, err := os.ReadFile(filepath.Join(workspaceRoot, "123", "report.xlsx"))

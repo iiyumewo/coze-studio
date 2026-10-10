@@ -53,7 +53,7 @@ func (c *impl) MessageList(ctx context.Context, req *crossmessage.MessageListReq
 	lm := &entity.ListMeta{
 		ConversationID: req.ConversationID,
 		Limit:          int(req.Limit), // Since the value of limit is checked inside the node, the type cast here is safe
-		UserID:         strconv.FormatInt(req.UserID, 10),
+		UserID:         req.UserID,
 		AgentID:        req.BizID,
 		OrderBy:        req.OrderBy,
 	}

@@ -147,10 +147,11 @@ type UpdateMeta struct {
 }
 
 type AgentRunResponse struct {
-	Event            RunEvent          `json:"event"`
-	ChunkRunItem     *ChunkRunItem     `json:"run_record_item"`
-	ChunkMessageItem *ChunkMessageItem `json:"message_item"`
-	Error            *RunError         `json:"error"`
+	Event            RunEvent                       `json:"event"`
+	ChunkRunItem     *ChunkRunItem                  `json:"run_record_item"`
+	ChunkMessageItem *ChunkMessageItem              `json:"message_item"`
+	Activity         *singleagent.ToolActivityEvent `json:"activity,omitempty"`
+	Error            *RunError                      `json:"error"`
 }
 
 type AgentRespEvent struct {
@@ -164,6 +165,7 @@ type AgentRespEvent struct {
 	Suggest       *schema.Message
 	Knowledge     []*schema.Document
 	Interrupt     *singleagent.InterruptInfo
+	Activity      *singleagent.ToolActivityEvent
 	Err           error
 }
 

@@ -63,6 +63,12 @@ func newSkillTools(_ context.Context, conf *skillToolConfig) ([]tool.InvokableTo
 	if err != nil {
 		return nil, fmt.Errorf("create skill_read tool: %w", err)
 	}
+	readTool = withToolActivity(readTool, toolActivityMeta{
+		ToolName:     "skill_read",
+		RunningText:  "正在加载处理规范",
+		FinishedText: "处理规范已加载",
+		FailedText:   "处理规范加载失败",
+	})
 
 	fileReadTool, err := utils.InferTool("skill_file_read", skillFileReadToolDescription, (&skillFileReadTool{
 		catalog: conf.catalog,
@@ -70,6 +76,12 @@ func newSkillTools(_ context.Context, conf *skillToolConfig) ([]tool.InvokableTo
 	if err != nil {
 		return nil, fmt.Errorf("create skill_file_read tool: %w", err)
 	}
+	fileReadTool = withToolActivity(fileReadTool, toolActivityMeta{
+		ToolName:     "skill_file_read",
+		RunningText:  "正在读取参考资料",
+		FinishedText: "参考资料已读取",
+		FailedText:   "参考资料读取失败",
+	})
 
 	scriptTool, err := utils.InferTool("script_run", scriptRunToolDescription, (&scriptRunTool{
 		catalog:        conf.catalog,
@@ -79,6 +91,12 @@ func newSkillTools(_ context.Context, conf *skillToolConfig) ([]tool.InvokableTo
 	if err != nil {
 		return nil, fmt.Errorf("create script_run tool: %w", err)
 	}
+	scriptTool = withToolActivity(scriptTool, toolActivityMeta{
+		ToolName:     "script_run",
+		RunningText:  "正在执行处理任务",
+		FinishedText: "处理任务已结束",
+		FailedText:   "处理任务执行失败",
+	})
 
 	return []tool.InvokableTool{readTool, fileReadTool, scriptTool}, nil
 }

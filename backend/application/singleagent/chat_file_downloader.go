@@ -80,15 +80,10 @@ func (d *chatFileDownloader) DownloadConversation(
 	if strings.TrimSpace(fileRef) == "" {
 		return "", fmt.Errorf("file_key or file_name is required")
 	}
-	uid, err := strconv.ParseInt(userID, 10, 64)
-	if err != nil {
-		return "", fmt.Errorf("file download user id is invalid")
-	}
-
 	messageList, err := crossmessage.DefaultSVC().MessageList(ctx, &crossmessage.MessageListRequest{
 		ConversationID: conversationID,
 		Limit:          100,
-		UserID:         uid,
+		UserID:         userID,
 		BizID:          agentID,
 		OrderBy:        stringPtr("ASC"),
 	})

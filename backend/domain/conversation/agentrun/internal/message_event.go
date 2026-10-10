@@ -87,6 +87,13 @@ func (e *Event) SendMsgEvent(runEvent entity.RunEvent, messageItem *entity.Chunk
 	sw.Send(resp, nil)
 }
 
+func (e *Event) SendActivityEvent(activity *singleagent.ToolActivityEvent, sw *schema.StreamWriter[*entity.AgentRunResponse]) {
+	sw.Send(&entity.AgentRunResponse{
+		Event:    entity.RunEventActivity,
+		Activity: activity,
+	}, nil)
+}
+
 func (e *Event) SendErrEvent(runEvent entity.RunEvent, sw *schema.StreamWriter[*entity.AgentRunResponse], err *entity.RunError) {
 	resp := e.buildErrEvent(runEvent, err)
 	sw.Send(resp, nil)

@@ -20,7 +20,9 @@ import (
 	"context"
 	"errors"
 	"io"
+	"strconv"
 	"sync"
+	"time"
 
 	"github.com/cloudwego/eino/schema"
 	"github.com/mohae/deepcopy"
@@ -130,6 +132,16 @@ func (art *AgentRuntime) push(ctx context.Context, mainChan chan *entity.AgentRe
 			}
 			mh.handlerErr(ctx, chunk.Err)
 			return
+		}
+		if chunk.Activity != nil {
+			activity := *chunk.Activity
+			activity.ConversationID = strconv.FormatInt(art.RunMeta.ConversationID, 10)
+			activity.ChatID = strconv.FormatInt(art.RunRecord.ID, 10)
+			activity.BotID = strconv.FormatInt(art.RunMeta.AgentID, 10)
+			activity.SectionID = strconv.FormatInt(art.RunMeta.SectionID, 10)
+			activity.CreatedAt = time.Now().Unix()
+			art.MessageEvent.SendActivityEvent(&activity, art.SW)
+			continue
 		}
 
 		switch chunk.EventType {
@@ -393,6 +405,11 @@ func (art *AgentRuntime) pull(_ context.Context, mainChan chan *entity.AgentResp
 			}
 			mainChan <- errChunk
 			return
+		}
+
+		if rm.EventType == singleagent.EventTypeOfActivity {
+			mainChan <- &entity.AgentRespEvent{Activity: rm.Activity}
+			continue
 		}
 
 		eventType, tErr := transformEventMap(rm.EventType)

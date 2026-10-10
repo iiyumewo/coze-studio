@@ -376,6 +376,13 @@ func (a *OpenapiAgentRunApplication) pullStream(ctx context.Context, sseSender *
 			sseSender.Send(ctx, buildMessageChunkEvent(string(chunk.Event), buildARSM2ApiChatMessage(chunk)))
 		case entity.RunEventMessageDelta, entity.RunEventMessageCompleted:
 			sseSender.Send(ctx, buildMessageChunkEvent(string(chunk.Event), buildARSM2ApiMessage(chunk)))
+		case entity.RunEventActivity:
+			activity, err := json.Marshal(chunk.Activity)
+			if err != nil {
+				logs.CtxErrorf(ctx, "marshal activity event failed: %v", err)
+				continue
+			}
+			sseSender.Send(ctx, buildMessageChunkEvent(string(chunk.Event), activity))
 
 		default:
 			logs.CtxErrorf(ctx, "unknow handler event:%v", chunk.Event)

@@ -44,6 +44,7 @@ const (
 
 	RunEventMessageDelta     RunEvent = "conversation.message.delta"
 	RunEventMessageCompleted RunEvent = "conversation.message.completed"
+	RunEventActivity         RunEvent = "conversation.activity"
 
 	RunEventAck                 = "conversation.ack"
 	RunEventError      RunEvent = "conversation.error"

@@ -139,7 +139,7 @@ func (m *MessageList) Invoke(ctx context.Context, input map[string]any) (map[str
 	}
 
 	req := &crossmessage.MessageListRequest{
-		UserID:         userID,
+		UserID:         strconv.FormatInt(userID, 10),
 		BizID:          bizID,
 		ConversationID: conversationID,
 	}

@@ -33,6 +33,8 @@ import (
 	"github.com/coze-dev/coze-studio/backend/types/errno"
 )
 
+const defaultHistoryRound int32 = 5
+
 func (s *SingleAgentApplicationService) CreateSingleAgentDraft(ctx context.Context, req *developer_api.DraftBotCreateRequest) (*developer_api.DraftBotCreateResponse, error) {
 	modelList, err := config.ModelConf().GetOnlineModelListWithLimit(ctx, 1)
 	if err != nil {
@@ -145,7 +147,7 @@ func (s *SingleAgentApplicationService) defaultModelInfo(ctx context.Context) (*
 		ModelStyle:       bot_common.ModelStylePtr(bot_common.ModelStyle_Balance),
 		ShortMemoryPolicy: &bot_common.ShortMemoryPolicy{
 			ContextMode:  bot_common.ContextModePtr(bot_common.ContextMode_FunctionCall_2),
-			HistoryRound: ptr.Of[int32](3),
+			HistoryRound: ptr.Of(defaultHistoryRound),
 		},
 	}, nil
 }
