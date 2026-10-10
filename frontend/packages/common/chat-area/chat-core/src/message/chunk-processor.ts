@@ -56,6 +56,11 @@ export class StreamBufferHelper {
       this.streamMessageBuffer.push(message);
       return;
     }
+    if (message.extra_info.tool_activity_id) {
+      message.content_obj = message.content;
+      this.streamMessageBuffer.splice(previousIndex, 1, message);
+      return;
+    }
     // update
     const previousMessage = this.streamMessageBuffer.at(previousIndex);
     message.content = (previousMessage?.content || '') + message.content;

@@ -81,6 +81,9 @@ export interface MessageExtraInfo {
   /** Corresponding to timed task task_type, 1-preset task, 2-user task, 3-Plugin background task */
   task_type?: string;
   call_id?: string; // function_call and tool_response matching IDs
+  tool_activity_id?: string;
+  tool_activity_phase?: 'started' | 'finished' | 'failed';
+  tool_activity_name?: string;
 }
 
 // Message structure returned by server level

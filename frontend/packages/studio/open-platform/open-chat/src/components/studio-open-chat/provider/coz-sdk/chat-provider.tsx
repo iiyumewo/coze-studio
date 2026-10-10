@@ -248,7 +248,8 @@ const ChatProviderImpl: FC<{
         },
         onCopyUpload: ({ message: msg, extra: { fileIndex } }) => {
           if (isFile(msg.content_obj)) {
-            copy(msg.content_obj.file_list[fileIndex ?? 0]?.file_key ?? '');
+            const file = msg.content_obj.file_list[fileIndex ?? 0];
+            copy(file?.file_url || file?.file_key || '');
             UIToast.success({
               content: I18n.t('copy_success') ?? 'Copy Successfully',
             });

@@ -29,6 +29,10 @@ import { catchParse } from '@/util';
 import { type OpenUserInfo } from '@/types/user';
 
 import { messageConverterToCoze } from './message-convert-to-coze';
+import {
+  createToolActivityMessage,
+  type ToolActivityEvent,
+} from './message-activity';
 
 type MessageParserFunc = ReturnType<
   Required<Required<RequestManagerOptions>['hooks']>['onGetMessageStreamParser']
@@ -43,6 +47,7 @@ enum ChunkEvent {
   CHAT_COMPLETED = 'conversation.chat.completed',
   CHAT_CREATED = 'conversation.chat.created',
   CHAT_FAILED = 'conversation.chat.failed',
+  ACTIVITY = 'conversation.activity',
 }
 
 export class MessageParser {
@@ -95,6 +100,11 @@ export class MessageParser {
         return this.createMessage(
           data as string,
           true,
+        ) as unknown as ParsedEvent;
+      }
+      case ChunkEvent.ACTIVITY: {
+        return this.createActivityMessage(
+          data as string,
         ) as unknown as ParsedEvent;
       }
       case ChunkEvent.CHAT_COMPLETED:
@@ -204,11 +214,24 @@ export class MessageParser {
     };
   }
 
+  private createActivityMessage(data: string) {
+    const activity = catchParse<ToolActivityEvent>(data);
+    if (!activity) {
+      return;
+    }
+    return createToolActivityMessage(activity, {
+      conversationId: this.conversationId,
+      botId: this.botId,
+      sectionId: this.sectionId,
+      seqId: this.getSeqNo(),
+    });
+  }
+
   private getSeqNo() {
     return this.seqNo++;
   }
   private getIndexNo(messageType: string) {
-    if (!this.indexNoMap[messageType]) {
+    if (!(messageType in this.indexNoMap)) {
       this.indexNoMap[messageType] = this.indexNo++;
     }
     return this.indexNoMap[messageType];

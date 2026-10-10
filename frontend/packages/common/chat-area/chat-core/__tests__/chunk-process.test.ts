@@ -167,4 +167,50 @@ describe('消息接收测试', () => {
       chunkProcessor.getProcessedMessageByChunk(lastChunkRaw),
     ).toStrictEqual(expectMessage);
   });
+
+  it('replaces tool activity content when its phase changes', () => {
+    const processor = new ChunkProcessor({ bot_id: 'bot' });
+    const started: ChunkRaw = {
+      index: 1,
+      seq_id: 1,
+      is_finish: false,
+      message: {
+        role: 'assistant',
+        type: 'answer',
+        section_id: 'section',
+        content_type: ContentType.Text,
+        content: '● 正在准备附件',
+        message_id: 'call-1',
+        reply_id: 'chat-1',
+        extra_info: {
+          local_message_id: '',
+          tool_activity_id: 'call-1',
+          tool_activity_phase: 'started',
+          tool_activity_name: 'file_download',
+        } as Message['extra_info'],
+      },
+    };
+    const finished: ChunkRaw = {
+      ...started,
+      seq_id: 2,
+      is_finish: true,
+      message: {
+        ...started.message,
+        content: '✓ 附件已准备',
+        extra_info: {
+          ...started.message.extra_info,
+          tool_activity_phase: 'finished',
+        },
+      },
+    };
+
+    processor.addChunkAndProcess(started);
+    processor.addChunkAndProcess(finished);
+
+    expect(processor.streamBuffer.streamMessageBuffer).toHaveLength(1);
+    expect(processor.getProcessedMessageByChunk(finished).content).toBe(
+      '✓ 附件已准备',
+    );
+    expect(processor.getProcessedMessageByChunk(finished).is_finish).toBe(true);
+  });
 });

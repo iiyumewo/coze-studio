@@ -30,7 +30,10 @@ interface ObjectStringItem {
   text?: string;
   file_id?: string;
   file_url?: string;
+  name?: string;
+  size?: number;
 }
+type OpenApiContentType = SdkContentType | 'file';
 const microSeconds = 1000;
 // 消息转换成 Coze的消息，主要用于消息接收后，在页面显示。
 class MessageConverseToCoze {
@@ -100,7 +103,7 @@ class MessageConverseToCoze {
       type: message.type,
     };
   }
-  public convertContent(contentType: SdkContentType, content: string) {
+  public convertContent(contentType: OpenApiContentType, content: string) {
     switch (contentType) {
       case 'object_string': {
         return {
@@ -117,6 +120,12 @@ class MessageConverseToCoze {
       case 'text': {
         return {
           content_type: ContentType.Text,
+          content,
+        };
+      }
+      case 'file': {
+        return {
+          content_type: ContentType.File,
           content,
         };
       }
@@ -163,16 +172,13 @@ class MessageConverseToCoze {
           }
           case 'file': {
             const { fileType = FileTypeEnum.DEFAULT_UNKNOWN } =
-              // @ts-expect-error -- linter-disable-autofix, 新添加参数，sdk中还未支持到
-              getFileInfo(new File([], item?.name)) || {};
+              getFileInfo(new File([], item.name || '')) || {};
             return {
               type: ContentType.File,
               file: {
                 file_key: item.file_id || '',
 
-                // @ts-expect-error -- linter-disable-autofix, 新添加参数，sdk中还未支持到
                 file_name: item?.name,
-                // @ts-expect-error -- linter-disable-autofix, 新添加参数，sdk中还未支持到
                 file_size: item?.size,
                 file_type: fileType,
                 file_url: item?.file_url,
